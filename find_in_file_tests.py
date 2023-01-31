@@ -35,7 +35,12 @@ class TestGetMatches(unittest.TestCase):
     def test_start_string(self):
         self.assertEqual(
             self.run_get_matches("ab", 3),
-            [(0, 'abcde'), (26, 'abcde'), (52, 'abcde')]
+            [(0, 'abcde'), (26, 'xyzabcde'), (52, 'xyzabcde')]
+        )
+
+        self.assertEqual(
+            self.run_get_matches("bc", 3),
+            [(1, 'abcdef'), (27, 'yzabcdef'), (53, 'yzabcdef')]
         )
 
     # Matches at the end of the chunks
@@ -43,6 +48,11 @@ class TestGetMatches(unittest.TestCase):
         self.assertEqual(
             self.run_get_matches("yz", 3),
             [(24, 'vwxyzabc'), (50, 'vwxyzabc'), (76, 'vwxyz')]
+        )
+
+        self.assertEqual(
+            self.run_get_matches("xy", 3),
+            [(23, 'uvwxyzab'), (49, 'uvwxyzab'), (75, 'uvwxyz')]
         )
 
     # Matches overlapping two chunks
