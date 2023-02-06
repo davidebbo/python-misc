@@ -3,7 +3,9 @@
 import unittest
 from extract_minimal_tree import extract
 
-Hominoidea = "(((Pongo_abelii_ott770295,Pongo_pygmaeus_ott770302:1.295194)Pongo_ott417949,(((Pan_troglodytes_ott417950,Pan_paniscus_ott158484)Pan_ott417957,Homo_sapiens_ott770315)ChimpHumanClade_,(Gorilla_beringei_ott351685,Gorilla_gorilla_ott417965)Gorilla_ott417969)Homininae_ott312031)Hominidae_ott770311)Hominoidea_ott386191;"
+Hominoidea = """(((Pongo_abelii_ott770295,Pongo_pygmaeus_ott770302:1.295194)Pongo_ott417949,
+    (((Pan_troglodytes_ott417950,Pan_paniscus_ott158484)Pan_ott417957,Homo_sapiens_ott770315)ChimpHumanClade_,
+    (Gorilla_beringei_ott351685,Gorilla_gorilla_ott417965)Gorilla_ott417969)Homininae_ott312031)Hominidae_ott770311)Hominoidea_ott386191;"""
 
 '''
 Unit test for extract_minimal_tree.extract
@@ -46,17 +48,23 @@ class TestExtract(unittest.TestCase):
 
         self.assertEqual(tree, '(Pongo_ott417949,(Pan_ott417957,Homo_sapiens_ott770315)ChimpHumanClade_)Hominidae_ott770311')
 
-    def test_two_nexted_taxa(self):
+    def test_two_nested_taxa(self):
         taxa = {"Pan", "Hominidae"}
         tree = extract(Hominoidea, taxa, expand_taxa=False)
 
         self.assertEqual(tree, '(Pan_ott417957)Hominidae_ott770311')
 
-    def test_three_nexted_taxa(self):
+    def test_three_nested_taxa(self):
         taxa = {"Pan", "Hominidae", "Pan_paniscus"}
         tree = extract(Hominoidea, taxa, expand_taxa=False)
 
         self.assertEqual(tree, '((Pan_paniscus_ott158484)Pan_ott417957)Hominidae_ott770311')
+
+    def test_nested_with_implied_taxon(self):
+        taxa = {"Hominidae", "Pan_paniscus", "Pan_troglodytes"}
+        tree = extract(Hominoidea, taxa, expand_taxa=False)
+
+        self.assertEqual(tree, '((Pan_troglodytes_ott417950,Pan_paniscus_ott158484)Pan_ott417957)Hominidae_ott770311')
 
     def test_mixed_scenarios(self):
         taxa = {"Pongo", "Hominidae", "Pan_paniscus", "Gorilla_gorilla"}
