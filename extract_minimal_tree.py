@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+'''
+Extract a minimal subtree that conatins all the passed in taxa and their closest ancestors.
+'''
 
 import argparse
 import sys
