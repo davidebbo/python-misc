@@ -45,17 +45,25 @@ def extract(tree, taxa, expand_taxa=False):
         index = match_full_name.end()
 
         match_taxon = taxon_regex.match(match_full_name.group())
+        found_taxon = False
         if (match_taxon):
             taxon = match_taxon.group(1)
             if taxon in taxa:
-                # We've found a taxon, so remove it from the list, and create a node for it
+                # We've found a taxon, so remove it from the list
                 taxa.remove(taxon)
+                found_taxon = True
 
-                # Any node with higher depth must be a child of this one. Remove them from the search list
-                children = [n for n in nodes if n["depth"] > len(index_stack)]
+        if found_taxon or closed_brace:
+            # Any node with higher depth must be a child of this one
+            children = [n for n in nodes if n["depth"] > len(index_stack)]
+            for node in children:
+                node["depth"] -= 1
+
+            if found_taxon or len(children) > 1:
+                # Remove the children from the search list
                 nodes = [n for n in nodes if n not in children]
 
-                if expand_taxa or not children:
+                if found_taxon and (expand_taxa or not children):
                     nodes.append(
                         {"tree_string": tree[start_index:index], "depth": len(index_stack)})
                 else:
@@ -63,20 +71,6 @@ def extract(tree, taxa, expand_taxa=False):
                     nodes.append({
                         "tree_string": f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}",
                         "depth": len(index_stack)})
-
-        if closed_brace:
-            nodes_with_current_depth = [n for n in nodes if n["depth"] == len(index_stack) + 1]
-            for node in nodes_with_current_depth:
-                node["depth"] -= 1
-
-            if len(nodes_with_current_depth) > 1:
-                # We've found at least two nodes that match the current depth
-                # Remove them from the list of nodes we're still looking for,
-                # and replace them by a new node that wraps them
-                nodes = [n for n in nodes if n not in nodes_with_current_depth]
-                nodes.append(
-                    {"tree_string": f"({','.join([node['tree_string'] for node in nodes_with_current_depth])}){match_full_name.group()}",
-                    "depth": len(index_stack)})
 
         if tree[index] == ',':
             index += 1
