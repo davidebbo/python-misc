@@ -54,6 +54,12 @@ class TestExtract(unittest.TestCase):
 
         self.assertEqual(tree, '(Pan_ott417957)Hominidae_ott770311')
 
+    def test_two_nested_taxa_with_expansion(self):
+        taxa = {"Pan", "Pan_paniscus"}
+        tree = extract(Hominoidea, taxa, expand_taxa=True)
+
+        self.assertEqual(tree, '(Pan_troglodytes_ott417950,Pan_paniscus_ott158484)Pan_ott417957')
+
     def test_three_nested_taxa(self):
         taxa = {"Pan", "Hominidae", "Pan_paniscus"}
         tree = extract(Hominoidea, taxa, expand_taxa=False)
