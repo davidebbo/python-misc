@@ -35,7 +35,7 @@ def extract(tree, taxa, expand_taxa=False):
             # Set the start index to the begining of the taxon (where the open parenthesis is)
             start_index = index_stack.pop()
 
-            # But if we're not supposed to expand the taxon, just set it here, skipping the whole (...) block
+            # But if we're not supposed to expand the taxon, just set it to here, skipping the whole (...) block
             if not expand_taxa:
                 start_index = index
         else:
