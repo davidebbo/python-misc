@@ -42,7 +42,7 @@ def extract(tree, taxa, expand_taxa=False):
             start_index = index
 
         match_full_name = whole_token_regex.match(tree, index)
-        index += match_full_name.end() - index
+        index = match_full_name.end()
 
         match_taxon = taxon_regex.match(match_full_name.group())
         if (match_taxon):
