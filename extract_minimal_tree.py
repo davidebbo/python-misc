@@ -35,7 +35,7 @@ def extract(tree, taxa, expand_taxa=False):
             # Set the start index to the begining of the taxon (where the open parenthesis is)
             start_index = index_stack.pop()
 
-            # But if we're not supposed to expand the taxon, just set it to here, skipping the whole (...) block
+            # But if we're not supposed to expand the taxon, just set it to here, so we just have the taxon name
             if not expand_taxa:
                 start_index = index
         else:
@@ -44,10 +44,9 @@ def extract(tree, taxa, expand_taxa=False):
         match_full_name = whole_token_regex.match(tree, index)
         index = match_full_name.end()
 
-        match_taxon = taxon_regex.match(match_full_name.group())
         found_taxon = False
-        if (match_taxon):
-            taxon = match_taxon.group(1)
+        if (match_taxon_regex := taxon_regex.match(match_full_name.group())):
+            taxon = match_taxon_regex.group(1)
             if taxon in taxa:
                 # We've found a taxon, so remove it from the list
                 taxa.remove(taxon)
@@ -56,18 +55,30 @@ def extract(tree, taxa, expand_taxa=False):
         if found_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
             children = [n for n in nodes if n["depth"] > len(index_stack)]
+
+            # Assert that all the children have depth 1 less than this node. This is
+            # because any deeper nodes would have been bubbled up 
+            assert all([node["depth"] == len(index_stack) + 1 for node in children])
+
+            # Reduce the depth of the children to bubble them up
             for node in children:
                 node["depth"] -= 1
 
+            # If we found a taxon, or there are multiple children, we need to create a node for this one
             if found_taxon or len(children) > 1:
                 # Remove the children from the search list
                 nodes = [n for n in nodes if n not in children]
 
+                # This condition is a little more complex than I'd like, but we we need to
+                # handle a number of cases. There are two types of nodes we can create:
+                # 1. A node that contains a full substring of the original tree, further split into:
+                #    a. Only include the taxon's name
+                #    b. Include the taxon's name and its entire subtree
+                # 2. A node that just wraps the children as if they were siblings
                 if found_taxon and (expand_taxa or not children):
                     nodes.append(
                         {"tree_string": tree[start_index:index], "depth": len(index_stack)})
                 else:
-                    # We're not expanding the taxon, so we need to wrap the children with the node
                     nodes.append({
                         "tree_string": f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}",
                         "depth": len(index_stack)})
