@@ -111,6 +111,7 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
 def main(args):
     taxa = set(args.taxa)
     expand_taxa = args.expand_taxa
+    excluded_taxa = set(args.excluded_taxa) if args.excluded_taxa else set()
 
     # If not specified, only expand if there is only one taxon, since it's not meaningful
     # to ask for a single non-expanded taxon
@@ -122,7 +123,7 @@ def main(args):
     # This could be optimized to read by chunks, with more complexity
     tree = args.treefile.read()
 
-    result = extract(tree, taxa, expand_taxa)
+    result = extract(tree, taxa, excluded_taxa, expand_taxa)
 
     if taxa:
         args.outfile.write(f'Could not find the following target taxa: {", ".join(taxa)}\n')
@@ -135,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick form')
     parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
     parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxon to search for')
-    parser.add_argument('--expand_taxa', '-x', action=argparse.BooleanOptionalAction, help='the taxon to search for')
+    parser.add_argument('--excluded_taxa', '-x', nargs='+', help='taxas to exclude from the result')
+    parser.add_argument('--expand_taxa', '-e', action=argparse.BooleanOptionalAction, help='whether found subtrees should be expanded')
     args = parser.parse_args()
     main(args)
