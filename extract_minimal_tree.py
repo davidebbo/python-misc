@@ -17,6 +17,9 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
     nodes = []
     excluded_ranges = []
 
+    # Clone the taxa set so we don't modify the original
+    taxa = set(taxa)
+
     index = 0
     index_stack = []
 
@@ -78,7 +81,7 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
                 # Remove the children from the search list
                 nodes = [n for n in nodes if n not in children]
 
-                # This condition is a little more complex than I'd like, but we need to
+                # This conditional is a little more complex than I'd like, but we need to
                 # handle a number of cases. There are two types of nodes we can create:
                 # 1. A node that contains a full substring of the original tree, further split into:
                 #    a. Only include the taxon's name
@@ -104,6 +107,10 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
         if tree[index] == ',':
             index += 1
     
+    # Throw an error if we didn't find all the taxa
+    if taxa:
+        raise Exception(f'Could not find the following taxa: {", ".join(taxa)}')
+
     return nodes[0]['tree_string'] if not taxa else None
 
 
@@ -125,11 +132,7 @@ def main(args):
 
     result = extract(tree, taxa, excluded_taxa, expand_taxa)
 
-    if taxa:
-        args.outfile.write(f'Could not find the following target taxa: {", ".join(taxa)}\n')
-    else:
-        args.outfile.write(result + ';\n')
-
+    args.outfile.write(result + ';\n')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
