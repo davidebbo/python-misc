@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-Extract a minimal subtree that conatins all the passed in taxa and their closest ancestors.
+Extract a minimal subtree that contains all the passed in taxa and their closest ancestors.
 '''
 
 import argparse
@@ -11,7 +11,7 @@ import re
 whole_token_regex = re.compile('[^(),;]*')
 taxon_regex = re.compile('\w*')
 
-def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
+def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=False):
     # We build the node list as we find them and process them
     nodes = []
     excluded_ranges = []
@@ -19,10 +19,14 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
     # Clone the taxa set so we don't modify the original
     taxa = set(taxa)
 
+    # It doesn't make sense not to expand if we're separating trees
+    if separate_trees:
+        expand_taxa = True
+
     index = 0
     index_stack = []
 
-    while taxa or len(nodes) >= 2:
+    while taxa or (len(nodes) >= 2 and not separate_trees):
         if index == len(tree) or tree[index] == ';':
             break
 
@@ -69,7 +73,8 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
 
         if found_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
-            children = [n for n in nodes if n["depth"] > len(index_stack)]
+            # But ignore the whole child logic if we're separating trees
+            children = [n for n in nodes if n["depth"] > len(index_stack)] if not separate_trees else []
 
             # Assert that all the children have depth 1 less than this node. This is
             # because any deeper nodes would have been bubbled up 
@@ -90,9 +95,9 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
                 #    a. Only include the taxon's name
                 #    b. Include the taxon's name and its entire subtree
                 # 2. A node that just wraps the children as if they were siblings
+                tree_string = ""
                 if found_taxon and (expand_taxa or not children):
                     # Put together the tree substring for this node, but with the excluded ranges removed
-                    tree_string = ""
                     prev_range = (start_index, start_index)
                     for range in excluded_ranges:
                         # Only process ranges that are within the current node
@@ -100,12 +105,10 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
                             tree_string += tree[prev_range[1]:range[0]]
                             prev_range = range
                     tree_string += tree[prev_range[1]:index]
-
-                    nodes.append({"tree_string": tree_string, "depth": len(index_stack)})
                 else:
-                    nodes.append({
-                        "tree_string": f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}",
-                        "depth": len(index_stack)})
+                    tree_string = f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}"
+
+                nodes.append({"name": taxon, "tree_string": tree_string, "depth": len(index_stack)})
 
         if tree[index] == ',':
             index += 1
@@ -114,14 +117,15 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
     if taxa:
         raise Exception(f'Could not find the following taxa: {", ".join(taxa)}')
 
-    return nodes[0]['tree_string'] if not taxa else None
-
+    # If we're separating trees, return a dictionary of trees,
+    # otherwise return a single tree string
+    return {node['name']: node['tree_string'] for node in nodes} if separate_trees else nodes[0]['tree_string']
 
 
 def main(args):
     taxa = set(args.taxa)
-    expand_taxa = args.expand_taxa
     excluded_taxa = set(args.excluded_taxa) if args.excluded_taxa else set()
+    expand_taxa = args.expand_taxa
 
     # If not specified, only expand if there is only one taxon, since it's not meaningful
     # to ask for a single non-expanded taxon
@@ -133,16 +137,21 @@ def main(args):
     # This could be optimized to read by chunks, with more complexity
     tree = args.treefile.read()
 
-    result = extract(tree, taxa, excluded_taxa, expand_taxa)
+    result = extract(tree, taxa, excluded_taxa, expand_taxa, args.separate_trees)
 
-    args.outfile.write(result + ';\n')
+    if args.separate_trees:
+        for name, tree in result.items():
+            args.outfile.write(f'{name}: {tree};\n')
+    else:
+        args.outfile.write(result + ';\n')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick form')
     parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
     parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxon to search for')
-    parser.add_argument('--excluded_taxa', '-x', nargs='+', help='taxas to exclude from the result')
+    parser.add_argument('--excluded_taxa', '-x', nargs='+', help='taxa to exclude from the result')
     parser.add_argument('--expand_taxa', '-e', action=argparse.BooleanOptionalAction, help='whether found subtrees should be expanded')
+    parser.add_argument('--separate_trees', '-s', action=argparse.BooleanOptionalAction, help='found subtrees should not be merged into a single tree')
     args = parser.parse_args()
     main(args)
