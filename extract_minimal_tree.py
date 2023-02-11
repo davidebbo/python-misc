@@ -9,8 +9,7 @@ import re
 
 
 whole_token_regex = re.compile('[^(),;]*')
-taxon_regex = re.compile('^(\w*?)(?:_ott(\d+))?(:[\d\.]*)?$')
-
+taxon_regex = re.compile('\w*')
 
 def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
     # We build the node list as we find them and process them
@@ -48,9 +47,13 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
         match_full_name = whole_token_regex.match(tree, index)
         index = match_full_name.end()
 
-        found_taxon = False
-        if (match_taxon_regex := taxon_regex.match(match_full_name.group())):
-            taxon = match_taxon_regex.group(1)
+        # This is a bit of a hack to optimize the regex. Challenge is that '_ott'
+        # is made of valid word characters, so replacing it with '%' makes it more
+        # efficient to parse, as it just goes till the next non-word character
+        full_name = match_full_name.group().replace('_ott', '%')
+        if (match_taxon_regex := taxon_regex.match(full_name)):
+            found_taxon = False
+            taxon = match_taxon_regex.group(0)
             if taxon in taxa:
                 # We've found a taxon, so remove it from the list
                 taxa.remove(taxon)
