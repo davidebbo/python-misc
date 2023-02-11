@@ -88,5 +88,19 @@ class TestExtract(unittest.TestCase):
 
         self.assertEqual(tree, '((BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B')
 
+    def test_excluded_taxa(self):
+        tree = extract(test_tree, {"BB"}, excluded_taxa={"BBC","BBAB","BBAD"}, expand_taxa=True)
+
+        self.assertEqual(tree, '((BBAA_ott123,BBAC)BAA,(BBBA)BBB)BB')
+
+    def test_excluded_taxa_start_at_root(self):
+        tree = extract(test_tree, {"Root"}, excluded_taxa={"B","C"}, expand_taxa=True)
+
+        self.assertEqual(tree, '(A,D)Root')
+
+    def test_excluded_taxa_two_trees(self):
+        tree = extract(test_tree, {"C", "B"}, excluded_taxa={"CB", "BB"}, expand_taxa=True)
+
+        self.assertEqual(tree, '((BA)B,((CAA,CAB))C)Root')
 
 unittest.main()

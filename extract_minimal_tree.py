@@ -12,9 +12,10 @@ whole_token_regex = re.compile('[^(),;]*')
 taxon_regex = re.compile('^(\w*?)(?:_ott(\d+))?(:[\d\.]*)?$')
 
 
-def extract(tree, taxa, expand_taxa=False):
+def extract(tree, taxa, excluded_taxa={}, expand_taxa=False):
     # We build the node list as we find them and process them
     nodes = []
+    excluded_ranges = []
 
     index = 0
     index_stack = []
@@ -51,6 +52,14 @@ def extract(tree, taxa, expand_taxa=False):
                 # We've found a taxon, so remove it from the list
                 taxa.remove(taxon)
                 found_taxon = True
+            elif taxon in excluded_taxa:
+                # Add the excluded range, with different logic depending on comma position
+                if tree[index] == ',':
+                    excluded_ranges.append((start_index, index+1))
+                elif tree[start_index-1] == ',':
+                    excluded_ranges.append((start_index-1, index))
+                else:
+                    excluded_ranges.append((start_index, index))
 
         if found_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
@@ -69,15 +78,24 @@ def extract(tree, taxa, expand_taxa=False):
                 # Remove the children from the search list
                 nodes = [n for n in nodes if n not in children]
 
-                # This condition is a little more complex than I'd like, but we we need to
+                # This condition is a little more complex than I'd like, but we need to
                 # handle a number of cases. There are two types of nodes we can create:
                 # 1. A node that contains a full substring of the original tree, further split into:
                 #    a. Only include the taxon's name
                 #    b. Include the taxon's name and its entire subtree
                 # 2. A node that just wraps the children as if they were siblings
                 if found_taxon and (expand_taxa or not children):
-                    nodes.append(
-                        {"tree_string": tree[start_index:index], "depth": len(index_stack)})
+                    # Put together the tree substring for this node, but with the excluded ranges removed
+                    tree_string = ""
+                    prev_range = (start_index, start_index)
+                    for range in excluded_ranges:
+                        # Only process ranges that are within the current node
+                        if range[0] >= start_index and range[0] < index:
+                            tree_string += tree[prev_range[1]:range[0]]
+                            prev_range = range
+                    tree_string += tree[prev_range[1]:index]
+
+                    nodes.append({"tree_string": tree_string, "depth": len(index_stack)})
                 else:
                     nodes.append({
                         "tree_string": f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}",
