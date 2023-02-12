@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from extract_minimal_tree import extract
+from extract_trees import extract
 
 test_tree = "(A,(BA,((BBAA_ott123,BBAB,BBAC,BBAD)BAA,(BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B,((CAA,CAB),CB)C,D)Root;"
 
