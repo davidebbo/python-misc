@@ -9,7 +9,7 @@ import re
 from typing import Set
 
 whole_token_regex = re.compile('[^(),;]*')
-taxon_regex = re.compile('[\w\']*')
+taxon_regex = re.compile('([\w\']*)(?:%(\d+))?')
 
 
 def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
@@ -57,14 +57,16 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
         # is made of valid word characters, so replacing it with '%' makes it more
         # efficient to parse, as it just goes till the next non-word character
         full_name = match_full_name.group().replace('_ott', '%')
+
         if (match_taxon_regex := taxon_regex.match(full_name)):
             found_taxon = False
-            taxon = match_taxon_regex.group(0).strip("'")
-            if taxon in target_taxa:
+            taxon = match_taxon_regex.group(1).strip("'")
+            ott_id = match_taxon_regex.group(2)
+            if taxon in target_taxa or ott_id in target_taxa:
                 # We've found a taxon, so remove it from the list
-                target_taxa.remove(taxon)
+                target_taxa.remove(taxon if taxon in target_taxa else ott_id)
                 found_taxon = True
-            elif taxon in excluded_taxa:
+            elif taxon in excluded_taxa or ott_id in excluded_taxa:
                 # Add the excluded range, with different logic depending on comma position
                 if newick_tree[index] == ',':
                     excluded_ranges.append((start_index, index+1))
