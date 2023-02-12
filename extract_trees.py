@@ -125,10 +125,12 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
     if target_taxa:
         raise Exception(f'Could not find the following taxa: {", ".join(target_taxa)}')
 
-    # If we're separating trees, return a dictionary of trees,
-    # otherwise return a single tree string
-    return {node['name']: node['tree_string'] for node in nodes} if separate_trees else nodes[0]['tree_string']
-
+    if separate_trees:
+        # If we're separating trees, return a dictionary of trees, indexed by ott or name
+        return {node['ott'] or node['name']: node['tree_string'] for node in nodes}
+    else:
+        # Otherwise return a single tree string
+        return nodes[0]['tree_string']
 
 def main(args):
     target_taxa = set(args.taxa)
