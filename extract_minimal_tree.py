@@ -9,7 +9,7 @@ import re
 
 
 whole_token_regex = re.compile('[^(),;]*')
-taxon_regex = re.compile('\w*')
+taxon_regex = re.compile('[\w\']*')
 
 def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=False):
     # We build the node list as we find them and process them
@@ -57,7 +57,7 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
         full_name = match_full_name.group().replace('_ott', '%')
         if (match_taxon_regex := taxon_regex.match(full_name)):
             found_taxon = False
-            taxon = match_taxon_regex.group(0)
+            taxon = match_taxon_regex.group(0).strip("'")
             if taxon in taxa:
                 # We've found a taxon, so remove it from the list
                 taxa.remove(taxon)

@@ -103,4 +103,9 @@ class TestExtract(unittest.TestCase):
 
         self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB),CB)C'})
 
+    def test_quoted_taxa(self):
+        tree = extract("(A,'foo',C)D;", {"foo"}, expand_taxa=True)
+
+        self.assertEqual(tree, "'foo'")
+
 unittest.main()
