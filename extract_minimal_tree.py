@@ -6,18 +6,20 @@ Extract a minimal subtree that contains all the passed in taxa and their closest
 import argparse
 import sys
 import re
-
+from typing import Set
 
 whole_token_regex = re.compile('[^(),;]*')
 taxon_regex = re.compile('[\w\']*')
 
-def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=False):
-    # We build the node list as we find them and process them
+
+def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
+            expand_taxa: bool = False, separate_trees: bool = False):
+    # We build the node and exclusion lists as we find them and process them
     nodes = []
     excluded_ranges = []
 
     # Clone the taxa set so we don't modify the original
-    taxa = set(taxa)
+    target_taxa = set(target_taxa)
 
     # It doesn't make sense not to expand if we're separating trees
     if separate_trees:
@@ -26,16 +28,16 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
     index = 0
     index_stack = []
 
-    while taxa or (len(nodes) >= 2 and not separate_trees):
-        if index == len(tree) or tree[index] == ';':
+    while target_taxa or (len(nodes) >= 2 and not separate_trees):
+        if index == len(newick_tree) or newick_tree[index] == ';':
             break
 
-        if tree[index] == '(':
+        if newick_tree[index] == '(':
             index_stack.append(index)
             index += 1
             continue
 
-        closed_brace = tree[index] == ')'
+        closed_brace = newick_tree[index] == ')'
         if closed_brace:
             index += 1
 
@@ -48,7 +50,7 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
         else:
             start_index = index
 
-        match_full_name = whole_token_regex.match(tree, index)
+        match_full_name = whole_token_regex.match(newick_tree, index)
         index = match_full_name.end()
 
         # This is a bit of a hack to optimize the regex. Challenge is that '_ott'
@@ -58,15 +60,15 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
         if (match_taxon_regex := taxon_regex.match(full_name)):
             found_taxon = False
             taxon = match_taxon_regex.group(0).strip("'")
-            if taxon in taxa:
+            if taxon in target_taxa:
                 # We've found a taxon, so remove it from the list
-                taxa.remove(taxon)
+                target_taxa.remove(taxon)
                 found_taxon = True
             elif taxon in excluded_taxa:
                 # Add the excluded range, with different logic depending on comma position
-                if tree[index] == ',':
+                if newick_tree[index] == ',':
                     excluded_ranges.append((start_index, index+1))
-                elif tree[start_index-1] == ',':
+                elif newick_tree[start_index-1] == ',':
                     excluded_ranges.append((start_index-1, index))
                 else:
                     excluded_ranges.append((start_index, index))
@@ -102,20 +104,20 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
                     for range in excluded_ranges:
                         # Only process ranges that are within the current node
                         if range[0] >= start_index and range[0] < index:
-                            tree_string += tree[prev_range[1]:range[0]]
+                            tree_string += newick_tree[prev_range[1]:range[0]]
                             prev_range = range
-                    tree_string += tree[prev_range[1]:index]
+                    tree_string += newick_tree[prev_range[1]:index]
                 else:
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){match_full_name.group()}"
 
                 nodes.append({"name": taxon, "tree_string": tree_string, "depth": len(index_stack)})
 
-        if tree[index] == ',':
+        if newick_tree[index] == ',':
             index += 1
     
-    # Throw an error if we didn't find all the taxa
-    if taxa:
-        raise Exception(f'Could not find the following taxa: {", ".join(taxa)}')
+    # Throw an error if we didn't find all the target_taxa
+    if target_taxa:
+        raise Exception(f'Could not find the following taxa: {", ".join(target_taxa)}')
 
     # If we're separating trees, return a dictionary of trees,
     # otherwise return a single tree string
@@ -123,21 +125,21 @@ def extract(tree, taxa, excluded_taxa={}, expand_taxa=False, separate_trees=Fals
 
 
 def main(args):
-    taxa = set(args.taxa)
+    target_taxa = set(args.taxa)
     excluded_taxa = set(args.excluded_taxa) if args.excluded_taxa else set()
     expand_taxa = args.expand_taxa
 
     # If not specified, only expand if there is only one taxon, since it's not meaningful
     # to ask for a single non-expanded taxon
     if not expand_taxa:
-        expand_taxa = len(taxa) == 1
+        expand_taxa = len(target_taxa) == 1
 
     # Read the whole file as a string. This is not ideal, but it's still
     # very fast even with the full OpenTree tree.
     # This could be optimized to read by chunks, with more complexity
     tree = args.treefile.read()
 
-    result = extract(tree, taxa, excluded_taxa, expand_taxa, args.separate_trees)
+    result = extract(tree, target_taxa, excluded_taxa, expand_taxa, args.separate_trees)
 
     if args.separate_trees:
         for name, tree in result.items():
