@@ -106,24 +106,15 @@ class TestExtract(unittest.TestCase):
         self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB),CB)C'})
 
     def test_quoted_taxa(self):
-        tree = extract("(A,'foo',C)D;", {"foo"}, expand_taxa=True)
+        # Real example found in Open Tree: (...)'Pristiformes/Rhiniformes_group_ott356644'
 
-        self.assertEqual(tree, "'foo'")
+        tree_string = "(A,(B,'C':123)'foo/bar_ott356644',D)E;"
 
-    # def test_invalid_char(self):
-    #     exception = False
-    #     try:
-    #         tree = extract("(^A,B)C;", {"B"}, expand_taxa=True)
-    #     except:
-    #         exception = True
-    #         return
-        
-    #     self.assertTrue(exception)
+        tree = extract(tree_string, {"356644"}, expand_taxa=True)
+        self.assertEqual(tree, "(B,'C':123)'foo/bar_ott356644'")
 
-    # def test_tmp(self):
-    #     tree = extract("(A)B;", {"B"}, expand_taxa=True)
-
-    #     self.assertEqual(tree, "(A)B")
+        tree = extract(tree_string, {"foo/bar"}, expand_taxa=True)
+        self.assertEqual(tree, "(B,'C':123)'foo/bar_ott356644'")
 
 
 unittest.main()

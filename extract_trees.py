@@ -9,9 +9,7 @@ import re
 import sys
 from typing import Set
 
-whole_token_regex = re.compile('[^(),;]+')
-taxon_regex = re.compile('([\w\']*)(?:%(\d+))?')
-
+non_name_regex = re.compile(r'[,;:\(\)]')
 
 def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             expand_taxa: bool = False, separate_trees: bool = False):
@@ -30,7 +28,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
     index_stack = []
 
     while target_taxa or (len(nodes) >= 2 and not separate_trees):
-        if index == len(newick_tree) or newick_tree[index] == ';':
+        if newick_tree[index] == ';':
             break
 
         if newick_tree[index] == '(':
@@ -51,35 +49,51 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
         else:
             start_index = index
 
-        full_name = ''
         found_taxon = False
         taxon = ott_id = None
-        if match_full_name := whole_token_regex.match(newick_tree, index):
-            index = match_full_name.end()
 
-            full_name = match_full_name.group()
+        if newick_tree[index] == "'":
+            full_name_start_index = index
 
-            # This is a bit of a hack to optimize the regex. Challenge is that '_ott'
-            # is made of valid word characters, so replacing it with '%' (an arbitrary
-            # non-word character) makes it more efficient to parse, as it just goes till
-            # the next non-word character
-            match_taxon_regex = taxon_regex.match(full_name.replace('_ott', '%'))
+            # This is a quoted name, so we need to find the end of the name
+            end_quote_index = newick_tree.index("'", index+1)
 
-            if (match_taxon_regex):
-                taxon = match_taxon_regex.group(1).strip("'")
-                ott_id = match_taxon_regex.group(2)
-                if taxon in target_taxa or ott_id in target_taxa:
-                    # We've found a taxon, so remove it from the list
-                    target_taxa.remove(taxon if taxon in target_taxa else ott_id)
-                    found_taxon = True
-                elif taxon in excluded_taxa or ott_id in excluded_taxa:
-                    # Add the excluded range, with different logic depending on comma position
-                    if newick_tree[index] == ',':
-                        excluded_ranges.append((start_index, index+1))
-                    elif newick_tree[start_index-1] == ',':
-                        excluded_ranges.append((start_index-1, index))
-                    else:
-                        excluded_ranges.append((start_index, index))
+            taxon = newick_tree[index+1:end_quote_index]
+            index = end_quote_index + 1
+        else:
+            full_name_start_index = index
+
+            # This may be an unquoted name, so we need to find the end
+            match = non_name_regex.search(newick_tree, index)
+            if match:
+                index = match.end()-1
+                taxon = newick_tree[full_name_start_index:index]
+
+        if taxon:
+            # Check if the taxon has an ott id, and if so, parse it out
+            if '_ott' in taxon:
+                ott_index = taxon.index('_ott')
+                ott_id = taxon[ott_index+4:]
+                taxon = taxon[:ott_index]
+
+            # Skip the colon and any numbers after it
+            if newick_tree[index] == ':':
+                index += 1
+                while newick_tree[index] in '0123456789.':
+                    index += 1
+
+            if taxon in target_taxa or ott_id in target_taxa:
+                # We've found a taxon, so remove it from the list
+                target_taxa.remove(taxon if taxon in target_taxa else ott_id)
+                found_taxon = True
+            elif taxon in excluded_taxa or ott_id in excluded_taxa:
+                # Add the excluded range, with different logic depending on comma position
+                if newick_tree[index] == ',':
+                    excluded_ranges.append((start_index, index+1))
+                elif newick_tree[start_index-1] == ',':
+                    excluded_ranges.append((start_index-1, index))
+                else:
+                    excluded_ranges.append((start_index, index))
 
         if found_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
@@ -116,6 +130,8 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                             prev_range = range
                     tree_string += newick_tree[prev_range[1]:index]
                 else:
+                    # Full name including the branch length
+                    full_name = newick_tree[full_name_start_index:index]
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){full_name}"
 
                 nodes.append({"name": taxon, "ott": ott_id, "tree_string": tree_string, "depth": len(index_stack)})
