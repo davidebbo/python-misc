@@ -4,8 +4,9 @@ Extract a minimal subtree that contains all the passed in taxa and their closest
 '''
 
 import argparse
-import sys
+import logging
 import re
+import sys
 from typing import Set
 
 whole_token_regex = re.compile('[^(),;]+')
@@ -123,7 +124,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
     
     # Throw an error if we didn't find all the target_taxa
     if target_taxa:
-        raise Exception(f'Could not find the following taxa: {", ".join(target_taxa)}')
+        logging.warning(f'Could not find the following taxa: {", ".join(target_taxa)}')
 
     if separate_trees:
         # If we're separating trees, return a dictionary of trees, indexed by ott or name

@@ -11,12 +11,9 @@ Unit test for extract_minimal_tree.extract
 class TestExtract(unittest.TestCase):
 
     def test_missing_taxa(self):
-        # Catch missing taxa
-        try:
-            # This should raise an exception since X and Y is not in the tree
-            tree = extract(test_tree, {"X", "BBC", "Y"})
-        except:
-            self.assertTrue(True)
+        tree = extract(test_tree, {"X", "BBC", "Y"})
+
+        self.assertEqual(tree, 'BBC_ott456:78.9')
 
     def test_one_taxon_expanded(self):
         tree = extract(test_tree, {"B"}, expand_taxa=True)
@@ -112,5 +109,21 @@ class TestExtract(unittest.TestCase):
         tree = extract("(A,'foo',C)D;", {"foo"}, expand_taxa=True)
 
         self.assertEqual(tree, "'foo'")
+
+    # def test_invalid_char(self):
+    #     exception = False
+    #     try:
+    #         tree = extract("(^A,B)C;", {"B"}, expand_taxa=True)
+    #     except:
+    #         exception = True
+    #         return
+        
+    #     self.assertTrue(exception)
+
+    # def test_tmp(self):
+    #     tree = extract("(A)B;", {"B"}, expand_taxa=True)
+
+    #     self.assertEqual(tree, "(A)B")
+
 
 unittest.main()
