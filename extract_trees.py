@@ -129,7 +129,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
     if separate_trees:
         # If we're separating trees, return a dictionary of trees, indexed by ott or name
         return {node['ott'] or node['name']: node['tree_string'] for node in nodes}
-    else:
+    elif len(nodes) > 0:
         # Otherwise return a single tree string
         return nodes[0]['tree_string']
 
@@ -153,7 +153,7 @@ def main(args):
     if args.separate_trees:
         for name, tree in result.items():
             args.outfile.write(f'{name}: {tree};\n')
-    else:
+    elif result:
         args.outfile.write(result + ';\n')
 
 if __name__ == "__main__":
