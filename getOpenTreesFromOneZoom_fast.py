@@ -13,7 +13,11 @@ id_pattern = re.compile(r"(\d*)~?([-\d]*)$")
 def add_inclusions_and_exclusions_from_one_zoom_file(file, all_included_otts, all_excluded_otts):
     with open(file, 'r', encoding="utf8") as stream:
         tree = stream.read()
-        for name, ottIDs in ottRE.findall(tree):
+
+        # Skip the comment block at the start of the file
+        start_index = tree.index(']')
+
+        for name, ottIDs in ottRE.findall(tree, start_index):
             match = id_pattern.match(ottIDs)
             if match:
                 excluded_otts = (match.group(2) or '').split('-') #split by minus signs
