@@ -89,10 +89,10 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             
             if taxon in excluded_taxa or ott_id in excluded_taxa:
                 # Add the excluded range, with different logic depending on comma position
-                if newick_tree[index] == ',':
-                    excluded_range = (start_index, index+1)
-                elif newick_tree[start_index-1] == ',':
+                if newick_tree[start_index-1] == ',':
                     excluded_range = (start_index-1, index)
+                elif newick_tree[index] == ',':
+                    excluded_range = (start_index, index+1)
                 else:
                     excluded_range = (start_index, index)
                 excluded_ranges.append(excluded_range)
@@ -125,14 +125,20 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 # 2. A node that just wraps the children as if they were siblings
                 tree_string = ""
                 if found_taxon and (expand_taxa or not children):
+                    def string_to_append(start, end):
+                        # Fix up situation that would end up generating "(,"
+                        if tree_string and tree_string[-1] == '(' and newick_tree[start] == ',':
+                            start += 1
+                        return newick_tree[start:end]
+
                     # Put together the tree substring for this node, but with the excluded ranges removed
                     prev_range = (start_index, start_index)
                     for range in excluded_ranges:
-                        # Only process ranges that are within the current node
+                        # Only process ranges that are inside the current taxon
                         if range[0] > start_index and range[0] < index and range[1] > prev_range[1]:
-                            tree_string += newick_tree[prev_range[1]:range[0]]
+                            tree_string += string_to_append(prev_range[1], range[0])
                             prev_range = range
-                    tree_string += newick_tree[prev_range[1]:index]
+                    tree_string += string_to_append(prev_range[1], index)
                 else:
                     # Full name including the branch length
                     full_name = newick_tree[full_name_start_index:index]
