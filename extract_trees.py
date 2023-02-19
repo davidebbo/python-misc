@@ -86,14 +86,18 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 # We've found a taxon, so remove it from the list
                 target_taxa.remove(taxon if taxon in target_taxa else ott_id)
                 found_taxon = True
-            elif taxon in excluded_taxa or ott_id in excluded_taxa:
+            
+            if taxon in excluded_taxa or ott_id in excluded_taxa:
                 # Add the excluded range, with different logic depending on comma position
                 if newick_tree[index] == ',':
-                    excluded_ranges.append((start_index, index+1))
+                    excluded_range = (start_index, index+1)
                 elif newick_tree[start_index-1] == ',':
-                    excluded_ranges.append((start_index-1, index))
+                    excluded_range = (start_index-1, index)
                 else:
-                    excluded_ranges.append((start_index, index))
+                    excluded_range = (start_index, index)
+                excluded_ranges.append(excluded_range)
+                # sort the excluded ranges by start index
+                excluded_ranges.sort(key=lambda x: x[0])
 
         if found_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
@@ -125,7 +129,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                     prev_range = (start_index, start_index)
                     for range in excluded_ranges:
                         # Only process ranges that are within the current node
-                        if range[0] >= start_index and range[0] < index:
+                        if range[0] > start_index and range[0] < index and range[1] > prev_range[1]:
                             tree_string += newick_tree[prev_range[1]:range[0]]
                             prev_range = range
                     tree_string += newick_tree[prev_range[1]:index]
