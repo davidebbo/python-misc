@@ -37,7 +37,9 @@ def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_o
 
     # Save each tree to a file named after the taxon
     for ott, tree in trees.items():
-        with open(os.path.join(output_dir, ott + ".phy"), "w", encoding="utf8") as f:
+        file = os.path.join(output_dir, ott + ".phy")
+        logging.debug(f'Writing file: {file}')
+        with open(file, "w", encoding="utf8") as f:
             f.write(tree)
             f.write(";\n")
 
