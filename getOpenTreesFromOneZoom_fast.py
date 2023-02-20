@@ -7,24 +7,34 @@ import time
 
 import extract_trees
 
-ottRE = re.compile(r"(\w+)_ott([-~\d]+)\@")
-id_pattern = re.compile(r"(\d*)~?([-\d]*)$")
+full_ott_token = re.compile(r"'?([\w\-~]+)@'?")
+ott_details = re.compile(r"(\w+)_ott(\d*)~?([-\d]*)$")
 
-def add_inclusions_and_exclusions_from_one_zoom_file(file, all_included_otts, all_excluded_otts):
+
+def enumerate_one_zoom_tokens(tree):
+    # Skip the comment block at the start of the file
+    start_index = tree.index(']') if '[' in tree else 0
+
+    for full_match in full_ott_token.finditer(tree, start_index):
+        result = {'start': full_match.start(), 'end': full_match.end(), 'full_name': full_match.group(1)}
+
+        match = ott_details.match(result['full_name'])
+        if match:
+            result['excluded_otts'] = (match.group(3) or '').split('-') #split by minus signs
+            result['base_ott'] = result['excluded_otts'].pop(0) or match.group(2) #first number after '=' is the tree to extract.
+
+        logging.debug(result)
+        yield result
+
+def get_inclusions_and_exclusions_from_one_zoom_file(file, all_included_otts, all_excluded_otts):
     with open(file, 'r', encoding="utf8") as stream:
         tree = stream.read()
 
-        # Skip the comment block at the start of the file
-        start_index = tree.index(']')
-
-        for name, ottIDs in ottRE.findall(tree, start_index):
-            match = id_pattern.match(ottIDs)
-            if match:
-                excluded_otts = (match.group(2) or '').split('-') #split by minus signs
-                base_ott = excluded_otts.pop(0) or match.group(1) #first number after '=' is the tree to extract.
-                logging.debug(f'Base ott: {base_ott}, Excluded otts: {excluded_otts}')
-                all_included_otts.add(base_ott)
-                all_excluded_otts.update(excluded_otts)
+    for result in enumerate_one_zoom_tokens(tree):
+        # Check if the result has a base ott (won't have it if it's inserting another OZ file)
+        if 'base_ott' in result:
+            all_included_otts.add(result['base_ott'])
+            all_excluded_otts.update(result['excluded_otts'])
 
 def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_otts, all_excluded_otts):
     # Read the contents of the open tree file into a string
@@ -69,7 +79,7 @@ if __name__ == "__main__":
 
     for file in args.parse_files:
         logging.info(f"== Processing One Zoom file {file}")
-        add_inclusions_and_exclusions_from_one_zoom_file(file, included_otts, excluded_otts)
+        get_inclusions_and_exclusions_from_one_zoom_file(file, included_otts, excluded_otts)
     
     extract_trees_from_open_tree_file(args.open_tree_file, args.output_dir, included_otts, excluded_otts)
         
