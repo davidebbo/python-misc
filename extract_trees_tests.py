@@ -3,7 +3,7 @@
 import unittest
 from extract_trees import extract
 
-test_tree = "(A,(BA,((BBAA_ott123,BBAB,BBAC,BBAD)BAA,(BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B_ott789,((CAA,CAB),CB)C,D)Root;"
+test_tree = "(A,(BA,((BBAA_ott123,BBAB,BBAC,BBAD)BAA,(BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B_ott789,((CAA,CAB):5.25,CB)C,D)Root;"
 
 '''
 Unit test for extract_minimal_tree.extract
@@ -33,7 +33,7 @@ class TestExtract(unittest.TestCase):
     def test_two_taxa_expanded(self):
         tree = extract(test_tree, {"BBC", "C"}, expand_taxa=True)
 
-        self.assertEqual(tree, '((BBCA:12.34,BBCB)BBC_ott456:78.9,((CAA,CAB),CB)C)Root')
+        self.assertEqual(tree, '((BBCA:12.34,BBCB)BBC_ott456:78.9,((CAA,CAB):5.25,CB)C)Root')
 
     def test_three_taxa(self):
         tree = extract(test_tree, {"BA", "C", "BBC"})
@@ -88,7 +88,7 @@ class TestExtract(unittest.TestCase):
     def test_excluded_taxa_two_trees(self):
         tree = extract(test_tree, {"C", "B"}, excluded_taxa={"CB", "BB"}, expand_taxa=True)
 
-        self.assertEqual(tree, '((BA)B_ott789,((CAA,CAB))C)Root')
+        self.assertEqual(tree, '((BA)B_ott789,((CAA,CAB):5.25)C)Root')
 
     def test_exclude_first_two_taxa_under_parent(self):
         tree = extract('(A,B,C,D)E;', {"E"}, excluded_taxa={"A", "B"}, expand_taxa=True)
@@ -103,17 +103,17 @@ class TestExtract(unittest.TestCase):
     def test_one_separate_tree(self):
         tree = extract(test_tree, {"C"}, separate_trees=True)
 
-        self.assertEqual(tree, {'C': '((CAA,CAB),CB)C'})
+        self.assertEqual(tree, {'C': '((CAA,CAB):5.25,CB)C'})
 
     def test_two_separate_trees(self):
         tree = extract(test_tree, {"C", "BAA"}, separate_trees=True)
 
-        self.assertEqual(tree, {'BAA': '(BBAA_ott123,BBAB,BBAC,BBAD)BAA', 'C': '((CAA,CAB),CB)C'})
+        self.assertEqual(tree, {'BAA': '(BBAA_ott123,BBAB,BBAC,BBAD)BAA', 'C': '((CAA,CAB):5.25,CB)C'})
 
     def test_two_separate_trees_with_exclusions(self):
         tree = extract(test_tree, {"C", "BB"}, excluded_taxa={"BAA", "CAA"}, separate_trees=True)
 
-        self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB),CB)C'})
+        self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB):5.25,CB)C'})
 
     def test_quoted_taxa(self):
         # Real example found in Open Tree: (...)'Pristiformes/Rhiniformes_group_ott356644'

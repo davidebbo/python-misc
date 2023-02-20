@@ -145,7 +145,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){full_name}"
 
                 nodes.append({"name": taxon, "ott": ott_id, "tree_string": tree_string, "depth": len(index_stack)})
-        elif newick_tree[index] == ',':
+        elif newick_tree[index] == ',' or newick_tree[index] == ':':
             index += 1
     
     # Throw an error if we didn't find all the target_taxa
