@@ -76,6 +76,8 @@ def trim_tree(tree):
     return tree
     
 def expand_newick(oz_file, sub_trees_folder, output_stream):
+    logging.debug(f'Expanding {oz_file}')
+
     with open(oz_file, 'r', encoding="utf8") as stream:
         tree = stream.read()
 
@@ -103,7 +105,11 @@ def expand_newick(oz_file, sub_trees_folder, output_stream):
         else:
             oz_sub_file_name = token_to_file_map[result["full_name"]][0]
             oz_sub_file = os.path.join(oz_folder, oz_sub_file_name)
-            expand_newick(oz_sub_file, sub_trees_folder, output_stream)
+
+            if os.path.exists(oz_sub_file):
+                expand_newick(oz_sub_file, sub_trees_folder, output_stream)
+            else:
+                logging.warning(f"OZ file {oz_sub_file} does not exist")
 
         index = result['end']
         
