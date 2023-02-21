@@ -9,7 +9,7 @@ import re
 import sys
 from typing import Set
 
-non_name_regex = re.compile(r'[,;:\(\)]')
+non_name_regex = re.compile(r'[,;\(\)]')
 
 def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             expand_taxa: bool = False, separate_trees: bool = False):
@@ -68,6 +68,8 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             if match:
                 index = match.end()-1
                 taxon = newick_tree[full_name_start_index:index]
+                if ':' in taxon:
+                    taxon = taxon[:taxon.index(':')]
 
         if taxon:
             # Check if the taxon has an ott id, and if so, parse it out
@@ -145,7 +147,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){full_name}"
 
                 nodes.append({"name": taxon, "ott": ott_id, "tree_string": tree_string, "depth": len(index_stack)})
-        elif newick_tree[index] == ',' or newick_tree[index] == ':':
+        elif newick_tree[index] == ',':
             index += 1
     
     # Throw an error if we didn't find all the target_taxa

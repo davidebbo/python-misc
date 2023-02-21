@@ -28,7 +28,7 @@ class TestExtract(unittest.TestCase):
     def test_two_taxa_no_root_name(self):
         tree = extract(test_tree, {"CAA", "CAB"})
 
-        self.assertEqual(tree, '(CAA,CAB)')
+        self.assertEqual(tree, '(CAA,CAB):5.25')
 
     def test_two_taxa_expanded(self):
         tree = extract(test_tree, {"BBC", "C"}, expand_taxa=True)
