@@ -150,16 +150,16 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
         elif newick_tree[index] == ',':
             index += 1
     
-    # Throw an error if we didn't find all the target_taxa
     if target_taxa:
         logging.warning(f'Could not find the following taxa: {", ".join(target_taxa)}')
 
     if separate_trees:
         # If we're separating trees, return a dictionary of trees, indexed by ott or name
         return {node['ott'] or node['name']: node['tree_string'] for node in nodes}
-    elif len(nodes) > 0:
-        # Otherwise return a single tree string
-        return nodes[0]['tree_string']
+
+    # Otherwise return the one tree left, if any
+    assert len(nodes) <= 1
+    return nodes[0]['tree_string'] if len(nodes) > 0 else None
 
 def main(args):
     target_taxa = set(args.taxa)

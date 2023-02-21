@@ -10,10 +10,15 @@ Unit test for extract_minimal_tree.extract
 '''
 class TestExtract(unittest.TestCase):
 
-    def test_missing_taxa(self):
+    def test_some_missing_taxa(self):
         tree = extract(test_tree, {"X", "BBC", "Y"})
 
         self.assertEqual(tree, 'BBC_ott456:78.9')
+
+    def test_all_missing_taxa(self):
+        tree = extract(test_tree, {"X", "6789"})
+
+        self.assertEqual(tree, None)
 
     def test_one_taxon_expanded(self):
         tree = extract(test_tree, {"B"}, expand_taxa=True)
