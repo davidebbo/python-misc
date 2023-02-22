@@ -8,58 +8,7 @@ import logging
 import os
 import sys
 from getOpenTreesFromOneZoom_fast import enumerate_one_zoom_tokens
-
-token_to_file_map = {
-    'AMORPHEA': ['Amorphea.PHY', 50],
-    'CRUMS': ['CRuMs.PHY'],
-    'DIAPHORETICKES': ['Diaphoretickes.PHY', 100],
-    'METAZOA': ['Animals.PHY', 150],
-    'PORIFERA': ['PoriferaOneZoom.phy', 50],
-    'CTENOPHORA': ['CtenophoresPoder2001.PHY', 50],
-    'AMBULACRARIA': ['Ambulacraria.PHY', 20, 'Ambulacraria'],
-    'CYCLOSTOMATA': ['Cyclostome_full_guess.PHY', 43],
-    'LAMPREYS': ['Lampreys_Potter2015.phy', 332.0],
-    'GNATHOSTOMATA': ['BonyFishOpenTree.PHY', 65],
-    'CHONDRICHTHYES': ['Chondrichthyes_Renz2013.phy', 40],
-    'HOLOCEPHALI': ['Holocephali_Inoue2010.PHY', 250],
-    'BATOIDEA': ['Batoids_Aschliman2012.PHY', 100],
-    'SELACHII': ['Naylor2012Selachimorpha.PHY', 75],
-    'DALATIIDAE': ['Naylor2012Dalatiidae.PHY', 116.1],
-    'SOMNIOSIDAEOXYNOTIDAE': ['Naylor2012Somniosidae_Oxynotidae.PHY', 110.51],
-    'ETMOPTERIDAE': ['Naylor2012Etmopteridae.phy', 110.51],
-    'SQUATINIDAE': ['Naylor2012Squatinidae.phy', 147.59],
-    'PRISTIOPHORIDAE': ['Naylor2012Pristiophoridae.phy', 147.59],
-    'SCYLIORHINIDAE3': ['Naylor2012Scyliorhinidae3.PHY', 170],
-    'SCYLIORHINIDAE2': ['Naylor2012Scyliorhinidae2.PHY', 134.467193],
-    'CARCHARHINICAE_MINUS': ['Naylor2012Carcharhinicae_minus.PHY', 134.467193, 'Most_Carcharhinicae_'],
-    'COELACANTHIFORMES': ['CoelacanthSudarto2010.phy', 414],
-    'DIPNOI': ['LungfishCriswell2011.phy', 138],
-    'POLYPTERIFORMES': ['BicherSuzuki2010.phy',      353.4, 'Polypteriformes'],
-    'ACIPENSERIFORMES': ['SturgeonKrieger2008.phy',   166.1, 'Acipenseriformes'],
-    'HOLOSTEI': ['GarsDeepfin.phy', 54.6, 'Holostei'],
-    'TETRAPODA': ['Tetrapods_Zheng_base.PHY', 75],
-    'AMPHIBIA': ['AmphibiansOpenTree.PHY',              30.0],
-    'CROCODYLIA': ['Crocodylia_OneZoom.phy', 152.86],
-    'TESTUDINES': ['Testudines_OneZoom.phy', 55.77],
-    'NEOGNATHAE': ['Neognathae_minus_passerines_OneZoom.PHY', 15.69],
-    'PALAEOGNATHAE': ['PalaeognathaeMitchell2014.PHY', 40.45],
-    'TINAMIFORMES': ['Tinamous_OneZoom.phy', 6.85],
-    'PASSERIFORMES': ['PasserinesOneZoom.phy',      8],
-    'GALAPAGOS_FINCHES_AND_ALLIES_': ['GalapagosFinchesLamichhaney2015.phy',      3.6],
-    'MAMMALIA': ['Mammal_base.phy',            140],
-    'MARSUPIALIA': ['Marsupial_recalibrated.phy', 73],
-    'EUTHERIA': ['PlacentalsPoulakakis2010.phy',  70],
-    'BOREOEUTHERIA': ['BoreoeutheriaOneZoom_altered.phy', 5],
-    'XENARTHRA': ['XenarthraOneZoom.phy', 17.8],
-    'AFROTHERIA': ['AfrotheriaPoulakakis2010.phy', 4.9],
-    'PRIMATES': ['PrimatesSpringer2012_AT.PHY', 5],
-    'HYLOBATIDAE': ['GibbonsCarbone2014.phy', 12.6],
-    'DERMOPTERA': ['DermopteraJanecka2008.phy', 55],
-    'PROTOSTOMIA': ['Protostomes.PHY', 50],
-    'HOLOMYCOTA': ['Holomycota.PHY', 300],
-    'APHELIDA': ['Aphelida_rough.PHY', 10]
-}
-
+from token_to_oz_tree_file_mapping import token_to_file_map
 
 def trim_tree(tree):
     # Skip the comment block at the start of the file, if any
