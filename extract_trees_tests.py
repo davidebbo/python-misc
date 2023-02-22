@@ -123,13 +123,16 @@ class TestExtract(unittest.TestCase):
     def test_quoted_taxa(self):
         # Real example found in Open Tree: (...)'Pristiformes/Rhiniformes_group_ott356644'
 
-        tree_string = "(A,(B,'C':123)'foo/bar_ott356644',D)E;"
+        tree_string = "(A,(B,'C':123)'foo/bar_ott356644','abc$def':123.456)E;"
 
         tree = extract(tree_string, {"356644"}, expand_taxa=True)
         self.assertEqual(tree, "(B,'C':123)'foo/bar_ott356644'")
 
         tree = extract(tree_string, {"foo/bar"}, expand_taxa=True)
         self.assertEqual(tree, "(B,'C':123)'foo/bar_ott356644'")
+
+        tree = extract(tree_string, {"abc$def"}, expand_taxa=True)
+        self.assertEqual(tree, "'abc$def':123.456")
 
 
     def test_syntax_error_cases(self):
@@ -142,9 +145,15 @@ class TestExtract(unittest.TestCase):
 
             self.assertTrue(exception)
 
+        # Comma without a following taxon
         verify_exception("(A,,B);", {"B"})
         verify_exception("(A,B,);", {"C"})
+
+        # Too many closing parens
         verify_exception("(A,B))(C,D);", {"C"})
         verify_exception(")))", {"C"})
+
+        # Missing branch length
+        verify_exception("(Blah,Foo:);", {"C"})
 
 unittest.main()

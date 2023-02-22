@@ -9,7 +9,7 @@ import re
 import sys
 from typing import Set
 
-non_name_regex = re.compile(r'[,;\(\)]')
+non_name_regex = re.compile(r'[,;:\(\)]')
 
 def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             expand_taxa: bool = False, separate_trees: bool = False):
@@ -27,6 +27,10 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
     index = 0
     index_stack = []
 
+    # Helper function to raise a syntax error with extra context
+    def raise_syntax_error(message):
+        raise SyntaxError(f'Syntax error: {message}. Index={index}, Text="{newick_tree[index-20:index+20]}"')
+
     while target_taxa or (len(nodes) >= 2 and not separate_trees):
         if newick_tree[index] == ';':
             break
@@ -40,15 +44,15 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
         if closed_brace:
             # A closed brace cannot follow a comma
             if newick_tree[index-1] == ',':
-                raise SyntaxError(f"Syntax error: unexpected comma at index {index-1}")
+                raise_syntax_error(f"unexpected comma")
 
             index += 1
 
-            # Set the start index to the begining of the node (where the open parenthesis is)
+            # Set the start index to the beginning of the node (where the open parenthesis is)
             try:
                 node_start_index = index_stack.pop()
             except IndexError:
-                raise SyntaxError(f"Syntax error: unmatched closed brace at index {index}")
+                raise_syntax_error(f"unmatched closed brace")
 
             # But if we're not supposed to expand the taxon, just set it to here, so we just have the taxon name
             if not expand_taxa:
@@ -59,30 +63,34 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
         found_target_taxon = False
         taxon = ott_id = None
 
+        full_name_start_index = index
         if newick_tree[index] == "'":
-            full_name_start_index = index
-
             # This is a quoted name, so we need to find the end of the name
             end_quote_index = newick_tree.index("'", index+1)
 
             taxon = newick_tree[index+1:end_quote_index]
             index = end_quote_index + 1
         else:
-            full_name_start_index = index
-
             # This may be an unquoted name, so we need to find the end
             match = non_name_regex.search(newick_tree, index)
             if match:
-                index = match.end()-1
-                full_token = newick_tree[full_name_start_index:index]
-                taxon = full_token
-                branch_length = None
-                if ':' in taxon:
-                    taxon, branch_length = taxon.split(':')
+                index = match.start()
+                taxon = newick_tree[full_name_start_index:index]
 
-            # There should always be a token, except after a closed brace where it's optional            
-            if not full_token and not closed_brace:
-                raise SyntaxError(f"Syntax error: expected a name:branch token at index {index}")
+        # After the taxon, there may be a branch length
+        branch_length = None
+        if newick_tree[index] == ':':
+            index += 1
+            match = non_name_regex.search(newick_tree, index)
+            if match:
+                branch_length = newick_tree[index:match.start()]
+                index = match.start()
+            if not branch_length:
+                raise_syntax_error(f"expected a branch length after a colon")
+
+        # There should be a taxon, except after a closed brace where it's optional            
+        if not (taxon or branch_length) and not closed_brace:
+            raise_syntax_error(f"expected a taxon or a branch length (e.g. 'foo', 'foo:1.0', or ':1.0')")
 
         if taxon:
             # Check if the taxon has an ott id, and if so, parse it out
