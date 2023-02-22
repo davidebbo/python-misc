@@ -38,18 +38,25 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
 
         closed_brace = newick_tree[index] == ')'
         if closed_brace:
+            # A closed brace cannot follow a comma
+            if newick_tree[index-1] == ',':
+                raise SyntaxError(f"Syntax error: unexpected comma at index {index-1}")
+
             index += 1
 
-            # Set the start index to the begining of the taxon (where the open parenthesis is)
-            start_index = index_stack.pop()
+            # Set the start index to the begining of the node (where the open parenthesis is)
+            try:
+                node_start_index = index_stack.pop()
+            except IndexError:
+                raise SyntaxError(f"Syntax error: unmatched closed brace at index {index}")
 
             # But if we're not supposed to expand the taxon, just set it to here, so we just have the taxon name
             if not expand_taxa:
-                start_index = index
+                node_start_index = index
         else:
-            start_index = index
+            node_start_index = index
 
-        found_taxon = False
+        found_target_taxon = False
         taxon = ott_id = None
 
         if newick_tree[index] == "'":
@@ -67,9 +74,15 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
             match = non_name_regex.search(newick_tree, index)
             if match:
                 index = match.end()-1
-                taxon = newick_tree[full_name_start_index:index]
+                full_token = newick_tree[full_name_start_index:index]
+                taxon = full_token
+                branch_length = None
                 if ':' in taxon:
-                    taxon = taxon[:taxon.index(':')]
+                    taxon, branch_length = taxon.split(':')
+
+            # There should always be a token, except after a closed brace where it's optional            
+            if not full_token and not closed_brace:
+                raise SyntaxError(f"Syntax error: expected a name:branch token at index {index}")
 
         if taxon:
             # Check if the taxon has an ott id, and if so, parse it out
@@ -78,30 +91,24 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 ott_id = taxon[ott_index+4:]
                 taxon = taxon[:ott_index]
 
-            # Skip the colon and any numbers after it
-            if newick_tree[index] == ':':
-                index += 1
-                while newick_tree[index] in '0123456789.':
-                    index += 1
-
             if taxon in target_taxa or ott_id in target_taxa:
-                # We've found a taxon, so remove it from the list
+                # We've found a target taxon, so remove it from the target list
                 target_taxa.remove(taxon if taxon in target_taxa else ott_id)
-                found_taxon = True
+                found_target_taxon = True
             
             if taxon in excluded_taxa or ott_id in excluded_taxa:
                 # Add the excluded range, with different logic depending on comma position
-                if newick_tree[start_index-1] == ',':
-                    excluded_range = (start_index-1, index)
+                if newick_tree[node_start_index-1] == ',':
+                    excluded_range = (node_start_index-1, index)
                 elif newick_tree[index] == ',':
-                    excluded_range = (start_index, index+1)
+                    excluded_range = (node_start_index, index+1)
                 else:
-                    excluded_range = (start_index, index)
+                    excluded_range = (node_start_index, index)
                 excluded_ranges.append(excluded_range)
-                # sort the excluded ranges by start index
+                # Sort the excluded ranges by start index. Not efficient, but not on critical path
                 excluded_ranges.sort(key=lambda x: x[0])
 
-        if found_taxon or closed_brace:
+        if found_target_taxon or closed_brace:
             # Any node with higher depth must be a child of this one
             # But ignore the whole child logic if we're separating trees
             children = [n for n in nodes if n["depth"] > len(index_stack)] if not separate_trees else []
@@ -115,7 +122,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 node["depth"] -= 1
 
             # If we found a taxon, or there are multiple children, we need to create a node for this one
-            if found_taxon or len(children) > 1:
+            if found_target_taxon or len(children) > 1:
                 # Remove the children from the search list
                 nodes = [n for n in nodes if n not in children]
 
@@ -126,7 +133,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 #    b. Include the taxon's name and its entire subtree
                 # 2. A node that just wraps the children as if they were siblings
                 tree_string = ""
-                if found_taxon and (expand_taxa or not children):
+                if found_target_taxon and (expand_taxa or not children):
                     def string_to_append(start, end):
                         # Fix up situation that would end up generating "(,"
                         if tree_string and tree_string[-1] == '(' and newick_tree[start] == ',':
@@ -134,10 +141,10 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                         return newick_tree[start:end]
 
                     # Put together the tree substring for this node, but with the excluded ranges removed
-                    prev_range = (start_index, start_index)
+                    prev_range = (node_start_index, node_start_index)
                     for range in excluded_ranges:
                         # Only process ranges that are inside the current taxon
-                        if range[0] > start_index and range[0] < index and range[1] > prev_range[1]:
+                        if range[0] > node_start_index and range[0] < index and range[1] > prev_range[1]:
                             tree_string += string_to_append(prev_range[1], range[0])
                             prev_range = range
                     tree_string += string_to_append(prev_range[1], index)
@@ -147,7 +154,8 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){full_name}"
 
                 nodes.append({"name": taxon, "ott": ott_id, "tree_string": tree_string, "depth": len(index_stack)})
-        elif newick_tree[index] == ',':
+
+        if newick_tree[index] == ',':
             index += 1
     
     if target_taxa:

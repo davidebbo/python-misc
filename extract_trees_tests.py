@@ -132,4 +132,19 @@ class TestExtract(unittest.TestCase):
         self.assertEqual(tree, "(B,'C':123)'foo/bar_ott356644'")
 
 
+    def test_syntax_error_cases(self):
+        def verify_exception(tree_string, taxa):
+            exception = False
+            try:
+                extract(tree_string, taxa)
+            except SyntaxError:
+                exception = True
+
+            self.assertTrue(exception)
+
+        verify_exception("(A,,B);", {"B"})
+        verify_exception("(A,B,);", {"C"})
+        verify_exception("(A,B))(C,D);", {"C"})
+        verify_exception(")))", {"C"})
+
 unittest.main()
