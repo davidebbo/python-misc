@@ -81,7 +81,8 @@ def main(args):
     tree = args.treefile.read()
 
     result = extract(tree, target_taxa)
-    args.outfile.write(result + ';\n')
+    if result:
+        args.outfile.write(result + ';\n')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
