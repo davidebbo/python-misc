@@ -54,7 +54,7 @@ def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_o
     with open(open_tree_file, 'r', encoding="utf8") as f:
         fulltree = f.read()
 
-    trees = extract_trees.extract(fulltree, all_included_otts, excluded_taxa=all_excluded_otts, separate_trees=True)
+    trees = extract_trees.extract(fulltree, all_included_otts, excluded_taxa=all_excluded_otts)
 
     logging.info(f"Extracted {len(trees)} trees from Open Tree file")
 

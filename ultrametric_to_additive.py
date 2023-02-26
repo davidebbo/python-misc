@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 '''
 Transform an ultrametric newick tree into an additive newick tree
+'''
 
+'''
 e.g. if A split from B 7 MYA, and C split from A&B 20 MYA, the ultrametric tree would be:
 
 (
@@ -31,7 +33,7 @@ import argparse
 import sys
 from dendropy import Tree
 
-parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The ultrametric tree in newick form')
 parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output newick tree file')
 args = parser.parse_args()

@@ -8,7 +8,7 @@ from typing import Set
 
 non_name_regex = re.compile(r'[,;:\(\)]')
 
-def enumerate_nodes(newick_tree):
+def parse_tree(newick_tree):
     index = 0
     index_stack = []
 
@@ -39,7 +39,6 @@ def enumerate_nodes(newick_tree):
         else:
             node_start_index = index
 
-        found_target_taxon = False
         taxon = ott_id = None
 
         full_name_start_index = index
@@ -80,7 +79,9 @@ def enumerate_nodes(newick_tree):
                 ott_id = taxon[ott_index+4:]
                 taxon = taxon[:ott_index]
 
-        yield { 'taxon': taxon, 'ott_id': ott_id, 'edge_length': edge_length, 'start': node_start_index, 'end': index, 'depth': len(index_stack) }
+        yield {'taxon': taxon, 'ott_id': ott_id, 'edge_length': edge_length,
+                'start': node_start_index, 'end': index, 'full_name_start_index': full_name_start_index,
+                'depth': len(index_stack)}
 
         if newick_tree[index] == ',':
             index += 1
