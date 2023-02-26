@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+'''
+Create subtrees from the Open Tree of Life, on the basis of ott numbers in a set of newick files.
+'''
+
+'''
+foobar_ott123@ means create a node named foobar with ott 123, consisting of all descendants of 123 in the opentree.
+foobar_ott123~456-789-111@ means create a node named foobar with ott 123, using ott456 minus the descendant subtrees 789 and 111
+The tilde sign can be read an a equals (Dendropy doesn't like equals signs in taxon names)
+foobar_ott123~-789-111@ is shorthand for foobar_ott123~123-789-111@
+foobar_ott~456-789-111@ means create a node named foobar without any OTT number, using ott456 minus the descendant subtrees 789 and 111
+'''
+
 import argparse
 import logging
 import os
@@ -55,8 +68,7 @@ def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_o
 
 
 if __name__ == "__main__":
-    
-    parser = argparse.ArgumentParser(description='Create subtrees from the Open Tree of Life, on the basis of ott numbers in a set of newick files.')
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verbosity', '-v', action='count', default=0, help='verbosity level: output extra non-essential info')
     parser.add_argument('open_tree_file', help='Path to the Open Tree newick file')
     parser.add_argument('output_dir', help='Path to the directory in which to save the OpenTree subtrees. See https://github.com/jrosindell/OneZoomTouch')
