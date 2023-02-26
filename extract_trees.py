@@ -82,11 +82,8 @@ def main(args):
     result = extract(tree, target_taxa, excluded_taxa)
 
     # Check if result is a dict, indicating multiple trees
-    if isinstance(result, dict):
-        for name, tree in result.items():
-            args.outfile.write(f'{name}: {tree};\n')
-    elif result:
-        args.outfile.write(result + ';\n')
+    for name, tree in result.items():
+        args.outfile.write(f'{name}: {tree};\n')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
