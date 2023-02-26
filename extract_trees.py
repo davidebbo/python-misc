@@ -77,20 +77,20 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                 index = match.start()
                 taxon = newick_tree[full_name_start_index:index]
 
-        # After the taxon, there may be a branch length
-        branch_length = None
+        # After the taxon, there may be an edge length
+        edge_length = None
         if newick_tree[index] == ':':
             index += 1
             match = non_name_regex.search(newick_tree, index)
             if match:
-                branch_length = newick_tree[index:match.start()]
+                edge_length = newick_tree[index:match.start()]
                 index = match.start()
-            if not branch_length:
-                raise_syntax_error(f"expected a branch length after a colon")
+            if not edge_length:
+                raise_syntax_error(f"expected an edge length after a colon")
 
         # There should be a taxon, except after a closed brace where it's optional            
-        if not (taxon or branch_length) and not closed_brace:
-            raise_syntax_error(f"expected a taxon or a branch length (e.g. 'foo', 'foo:1.0', or ':1.0')")
+        if not (taxon or edge_length) and not closed_brace:
+            raise_syntax_error(f"expected a taxon or an edge length (e.g. 'foo', 'foo:1.0', or ':1.0')")
 
         if taxon:
             # Check if the taxon has an ott id, and if so, parse it out
@@ -157,7 +157,7 @@ def extract(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = {},
                             prev_range = range
                     tree_string += string_to_append(prev_range[1], index)
                 else:
-                    # Full name including the branch length
+                    # Full name including the edge length
                     full_name = newick_tree[full_name_start_index:index]
                     tree_string = f"({','.join([node['tree_string'] for node in children])}){full_name}"
 
