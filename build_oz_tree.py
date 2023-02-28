@@ -10,6 +10,8 @@ import sys
 from getOpenTreesFromOneZoom_fast import enumerate_one_zoom_tokens
 from token_to_oz_tree_file_mapping import token_to_file_map
 
+__author__ = "David Ebbo"
+
 def trim_tree(tree):
     # Skip the comment block at the start of the file, if any
     if '[' in tree:

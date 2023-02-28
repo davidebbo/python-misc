@@ -23,6 +23,8 @@ import argparse
 import re
 import sys
 
+__author__ = "David Ebbo"
+
 whole_token_regex = re.compile('[^(),;]+')
 
 def format(newick_tree, output_stream, indent_spaces=2):

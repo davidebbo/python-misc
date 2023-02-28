@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 '''
-Enumerate all nodes in a Newick tree
+Lightweight Newick parser that takes a string and enumerate all the nodes in the tree.
+
+It's a very simple one-pass parser that doesn't build any parse tree, and instead processes
+the nodes as they're read. It's designed to be fast.
+
+The nodes are returned in post-order (children before parent), which is the Newick order.
+
+Here is a trivial example of how to use it:
+
+    for node in parse_tree("((A_ott123,B:1.2)C_ott789:5.5;"):
+        print(f"Node: {node['taxon']}, OTT: {node['ott']}, Edge length: {node['edge_length']}")
+
+It produces the following output:
+    Node: A, OTT: 123, Edge length: 0.0
+    Node: B, OTT: None, Edge length: 1.2
+    Node: C, OTT: 789, Edge length: 5.5
 '''
 
 import re
 from typing import Set
+
+__author__ = "David Ebbo"
 
 non_name_regex = re.compile(r'[,;:\(\)]')
 
@@ -14,7 +31,7 @@ def parse_tree(newick_tree):
 
     # Helper function to raise a syntax error with extra context
     def raise_syntax_error(message):
-        raise SyntaxError(f'Syntax error: {message}. Index={index}, Text="{newick_tree[index-20:index+20]}"')
+        raise SyntaxError(message, (None, 0, index, newick_tree[index-20:index+20]))
 
     while newick_tree[index] != ';':
 
@@ -27,7 +44,7 @@ def parse_tree(newick_tree):
         if closed_brace:
             # A closed brace cannot follow a comma
             if newick_tree[index-1] == ',':
-                raise_syntax_error(f"unexpected comma")
+                raise_syntax_error(f"unexpected comma before closed brace")
 
             index += 1
 
@@ -39,7 +56,7 @@ def parse_tree(newick_tree):
         else:
             node_start_index = index
 
-        taxon = ott_id = None
+        taxon = ott = None
 
         full_name_start_index = index
         if newick_tree[index] == "'":
@@ -63,9 +80,10 @@ def parse_tree(newick_tree):
             if match:
                 # Convert to a float
                 try:
-                    edge_length = float(newick_tree[index:match.start()])
+                    edge_length_str = newick_tree[index:match.start()]
+                    edge_length = float(edge_length_str)
                 except ValueError:
-                    raise_syntax_error(f"{edge_length} is not a valid edge length")
+                    raise_syntax_error(f"'{edge_length_str}' is not a valid edge length")
                 index = match.start()
 
         # There should be a taxon, except after a closed brace where it's optional            
@@ -76,12 +94,16 @@ def parse_tree(newick_tree):
             # Check if the taxon has an ott id, and if so, parse it out
             if '_ott' in taxon:
                 ott_index = taxon.index('_ott')
-                ott_id = taxon[ott_index+4:]
+                ott = taxon[ott_index+4:]
                 taxon = taxon[:ott_index]
 
-        yield {'taxon': taxon, 'ott_id': ott_id, 'edge_length': edge_length,
+        yield {'taxon': taxon, 'ott': ott, 'edge_length': edge_length,
                 'start': node_start_index, 'end': index, 'full_name_start_index': full_name_start_index,
                 'depth': len(index_stack)}
 
         if newick_tree[index] == ',':
             index += 1
+
+    # The stack should be empty at the end
+    if len(index_stack) > 0:
+        raise_syntax_error(f"unmatched open brace")

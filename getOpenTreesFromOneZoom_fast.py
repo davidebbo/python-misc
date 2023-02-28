@@ -20,6 +20,8 @@ import time
 
 import extract_trees
 
+__author__ = "David Ebbo"
+
 full_ott_token = re.compile(r"'?([\w\-~]+)@'?")
 ott_details = re.compile(r"(\w+)_ott(\d*)~?([-\d]*)$")
 
@@ -82,7 +84,6 @@ if __name__ == "__main__":
     elif args.verbosity==2:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    start = time.time()
     if not os.path.isfile(args.open_tree_file):
         logging.warning("Could not find the OpenTree file {}".format(args.open_tree_file))
 
@@ -94,5 +95,3 @@ if __name__ == "__main__":
         get_inclusions_and_exclusions_from_one_zoom_file(file, included_otts, excluded_otts)
     
     extract_trees_from_open_tree_file(args.open_tree_file, args.output_dir, included_otts, excluded_otts)
-        
-    logging.debug("Time taken: {} seconds".format(time.time() - start))

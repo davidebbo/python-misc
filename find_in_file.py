@@ -9,6 +9,8 @@ import argparse
 import sys
 import re
 
+__author__ = "David Ebbo"
+
 def chunks_from_file(f, chunk_size):
     while chunk := f.read(chunk_size):
         yield chunk

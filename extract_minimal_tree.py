@@ -6,8 +6,10 @@ Extract a minimal tree that includes a set of taxa
 import argparse
 import logging
 import sys
-from fast_newick_parser import parse_tree
+from newick_parser import parse_tree
 from typing import Set
+
+__author__ = "David Ebbo"
 
 # Use fast method
 def extract(newick_tree, target_taxa: Set[str]):
@@ -19,16 +21,16 @@ def extract(newick_tree, target_taxa: Set[str]):
 
     for node in parse_tree(newick_tree):
         taxon = node['taxon']
-        ott_id = node['ott_id']
+        ott = node['ott']
         node_start_index = node['start']
         node_end_index = node['end']
 
         # This is a bit hacky. Ideally, the parser would give us the child count
         is_parent_node = newick_tree[node_start_index] == '('
 
-        if taxon in target_taxa or ott_id in target_taxa:
+        if taxon in target_taxa or ott in target_taxa:
             # We've found a target taxon, so remove it from the target list
-            target_taxa.remove(taxon if taxon in target_taxa else ott_id)
+            target_taxa.remove(taxon if taxon in target_taxa else ott)
             found_target_taxon = True
         else:
             found_target_taxon = False
@@ -58,7 +60,7 @@ def extract(newick_tree, target_taxa: Set[str]):
                     # Add the children to the tree string
                     tree_string = f"({','.join([child_node['tree_string'] for child_node in children])}){tree_string}"
 
-                node_list.append({"name": taxon, "ott": ott_id, "tree_string": tree_string, "depth": node["depth"]})
+                node_list.append({"name": taxon, "ott": ott, "tree_string": tree_string, "depth": node["depth"]})
 
         # If we've found all the target taxa, we're done
         if not target_taxa and len(node_list) <= 1:
