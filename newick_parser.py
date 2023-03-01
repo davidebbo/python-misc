@@ -7,6 +7,8 @@ the nodes as they're read. It's designed to be fast.
 
 The nodes are returned in post-order (children before parent), which is the Newick order.
 
+For simplicity, it assumes that the tree string has no spaces.
+
 Here is a trivial example of how to use it:
 
     for node in parse_tree("((A_ott123,B:1.2)C_ott789:5.5;"):

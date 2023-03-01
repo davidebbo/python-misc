@@ -16,7 +16,6 @@ import logging
 import os
 import re
 import sys
-import time
 
 import extract_trees
 
@@ -25,7 +24,9 @@ __author__ = "David Ebbo"
 full_ott_token = re.compile(r"'?([\w\-~]+)@'?")
 ott_details = re.compile(r"(\w+)_ott(\d*)~?([-\d]*)$")
 
-
+'''
+Enumerates all the OneZoom tokens in a tree string (e.g. foobar_ott123~-789-111)
+'''
 def enumerate_one_zoom_tokens(tree):
     # Skip the comment block at the start of the file
     start_index = tree.index(']') if '[' in tree else 0
@@ -41,6 +42,9 @@ def enumerate_one_zoom_tokens(tree):
         logging.debug(result)
         yield result
 
+'''
+Find all the included and excluded ott numbers in a OneZoom files, and add them to the sets
+'''
 def get_inclusions_and_exclusions_from_one_zoom_file(file, all_included_otts, all_excluded_otts):
     with open(file, 'r', encoding="utf8") as stream:
         tree = stream.read()
@@ -51,6 +55,9 @@ def get_inclusions_and_exclusions_from_one_zoom_file(file, all_included_otts, al
             all_included_otts.add(result['base_ott'])
             all_excluded_otts.update(result['excluded_otts'])
 
+'''
+Extract the subtrees from the Open Tree file, based on the list of included/excluded otts
+'''
 def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_otts, all_excluded_otts):
     # Read the contents of the open tree file into a string
     with open(open_tree_file, 'r', encoding="utf8") as f:

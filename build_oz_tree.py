@@ -26,6 +26,9 @@ def trim_tree(tree):
 
     return tree
     
+'''
+Copy the input file to the output file, recursively expanding any OneZoom tokens
+'''
 def expand_newick(oz_file, sub_trees_folder, output_stream):
     logging.debug(f'Expanding {oz_file}')
 
