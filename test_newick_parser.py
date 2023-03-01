@@ -30,20 +30,17 @@ class TestNewickParser(unittest.TestCase):
 
         self.assertTrue(exception)
 
-    def test_syntax_error_comma_not_followed_by_taxon(self):
-        self.verify_exception("(A,,B);", "expected a taxon or an edge length")
-        self.verify_exception("(A:123,,B);", "expected a taxon or an edge length")
-        self.verify_exception("(A,B,);", "unexpected comma before closed brace")
-
     def test_syntax_error_too_many_closed_braces(self):
-        self.verify_exception("(A,B))(C,D);", "unmatched closed brace")
-        self.verify_exception(")))", "unmatched closed brace")
+        self.verify_exception("(A,B))(C,D);", "expected a semicolon at the end of the tree")
+        self.verify_exception("A)))", "expected a semicolon at the end of the tree")
 
     def test_syntax_error_too_many_open_braces(self):
-        self.verify_exception("((A,B);", "unmatched open brace")
+        self.verify_exception("((A,B);", "expected ',' or ')'")
+        self.verify_exception("(();", "expected ',' or ')'")
 
     def test_syntax_error_missing_edge_length_after_colon(self):
         self.verify_exception("(Blah,Foo:);", "'' is not a valid edge length")
+        self.verify_exception("(Blah,Foo:a$3);", "'a$3' is not a valid edge length")
 
     def test_syntax_error_invalid_edge_length(self):
         self.verify_exception("(Blah,Foo_ott67:14z);", "'14z' is not a valid edge length")

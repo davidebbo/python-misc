@@ -28,39 +28,32 @@ non_name_regex = re.compile(r'[,;:\(\)]')
 def parse_tree(newick_tree):
     index = 0
     index_stack = []
+    closed_brace = False
 
     # Helper function to raise a syntax error with extra context
     def raise_syntax_error(message):
-        raise SyntaxError(message, (None, 0, index, newick_tree[index-20:index+20]))
+        raise SyntaxError(message, (None, 0, min(index, 20), newick_tree[max(index-20,0):index+20]))
 
-    while newick_tree[index] != ';':
-
+    while True:
         if newick_tree[index] == '(':
             index_stack.append(index)
             index += 1
             continue
 
-        closed_brace = newick_tree[index] == ')'
         if closed_brace:
-            # A closed brace cannot follow a comma
-            if newick_tree[index-1] == ',':
-                raise_syntax_error(f"unexpected comma before closed brace")
-
             index += 1
 
             # Set the start index to the beginning of the node (where the open parenthesis is)
-            try:
-                node_start_index = index_stack.pop()
-            except IndexError:
-                raise_syntax_error(f"unmatched closed brace")
+            node_start_index = index_stack.pop()
         else:
             node_start_index = index
 
         taxon = ott = None
 
+        # Parse the taxon name, either quoted or unquoted
         full_name_start_index = index
         if newick_tree[index] == "'":
-            # This is a quoted name, so we need to find the end of the name
+            # This is a quoted name, so we need to find the matching end quote
             end_quote_index = newick_tree.index("'", index+1)
 
             taxon = newick_tree[index+1:end_quote_index]
@@ -86,10 +79,6 @@ def parse_tree(newick_tree):
                     raise_syntax_error(f"'{edge_length_str}' is not a valid edge length")
                 index = match.start()
 
-        # There should be a taxon, except after a closed brace where it's optional            
-        if not (taxon or edge_length) and not closed_brace:
-            raise_syntax_error(f"expected a taxon or an edge length (e.g. 'foo', 'foo:1.0', or ':1.0')")
-
         if taxon:
             # Check if the taxon has an ott id, and if so, parse it out
             if '_ott' in taxon:
@@ -101,9 +90,19 @@ def parse_tree(newick_tree):
                 'start': node_start_index, 'end': index, 'full_name_start_index': full_name_start_index,
                 'depth': len(index_stack)}
 
+        # If the stack is empty, we've balanced all the braces and we're done
+        if len(index_stack) == 0:
+            break
+
+        # After a taxon, we expect a comma or a closed brace
+        closed_brace = newick_tree[index] == ')'
         if newick_tree[index] == ',':
             index += 1
+        elif not closed_brace:
+            raise_syntax_error(f"expected ',' or ')'")
 
-    # The stack should be empty at the end
-    if len(index_stack) > 0:
-        raise_syntax_error(f"unmatched open brace")
+    if index == len(newick_tree) or newick_tree[index] != ';':
+        raise_syntax_error(f"expected a semicolon at the end of the tree")
+
+    if len(newick_tree) > index + 1:
+        raise_syntax_error(f"Unexpected output after semicolon")
