@@ -44,4 +44,9 @@ class test_extract(unittest.TestCase):
 
         self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB):5.25,CB)C'})
 
+    def test_nested_exclusions(self):
+        tree = extract("((A,B)C,D)E;", {"E"}, excluded_taxa={"B", "C"})
+
+        self.assertEqual(tree, {'E': '(D)E'})
+
 unittest.main()
