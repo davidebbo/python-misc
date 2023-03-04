@@ -90,7 +90,7 @@ def main(args):
 
     if len(result) == 1:
         # If only one result, just output the tree
-        args.outfile.write(next(iter(result.values())))
+        args.outfile.write(f'{next(iter(result.values()))};\n')
     else:
         # If multiple items, output each on a separate line, prefixed with the name/ott
         for name, tree in result.items():
