@@ -26,51 +26,87 @@ def trim_tree(tree):
 
     return tree
     
-def expand_newick(oz_file, sub_trees_folder, output_stream):
-    logging.debug(f'Expanding {oz_file}')
 
-    with open(oz_file, 'r', encoding="utf8") as stream:
-        tree = stream.read()
+def build_oz_tree(base_file, ot_parts_folder, output_stream):
+    def process_newick(part_file, node_name_in_parent=None, edge_length_in_parent=None,
+                       mapping_entry=None, expand_nodes=False):
+        logging.debug(f'Processing {part_file}')
 
-    tree = trim_tree(tree)
-    index = 0
+        if not os.path.exists(part_file):
+            logging.warning(f"Subtree file {part_file} does not exist")
+            return
 
-    # Get the One Zoom include file folder from the path to the file
-    oz_folder = os.path.dirname(oz_file)
+        with open(part_file, 'r', encoding="utf8") as stream:
+            tree = stream.read()
 
-    for result in enumerate_one_zoom_tokens(tree):
-        output_stream.write(tree[index:result['start']])
+        tree = trim_tree(tree)
+        index = 0
 
-        if 'base_ott' in result:
-            ot_part_file = os.path.join(sub_trees_folder, f'{result["base_ott"]}.phy')
+        # We only need to look for children if it's a OneZoom file (i.e. .PHY extension)
+        if expand_nodes:
+            for result in enumerate_one_zoom_tokens(tree):
+                # Write the part of the tree before the child
+                output_stream.write(tree[index:result['start']])
 
-            # Check if the file exists
-            if os.path.exists(ot_part_file):
-                with open(ot_part_file, 'r', encoding="utf8") as stream:
-                    ot_part_tree = stream.read()
-                ot_part_tree = trim_tree(ot_part_tree)
-                output_stream.write(ot_part_tree)
-                logging.debug(f"Processed OT part file {ot_part_file}")
-            else:
-                logging.warning(f"Subtree file {ot_part_file} does not exist")
+                child_full_name = result["full_name"]
+
+                # Check if OneZoom token has a base ott (e.g. 123 in foobar_ott123~456-789-111)
+                if 'base_ott' in result:
+                    # It's an extracted Open Tree file, e.g. 123.phy
+                    sub_file = os.path.join(ot_parts_folder, f'{result["base_ott"]}.phy')
+                    expand_child_nodes = False
+                    child_mapping_entry = None
+                else:
+                    # Otherwise, it's a OneZoom file, e.g. Amorphea.PHY
+                    child_mapping_entry = token_to_file_map[child_full_name]
+                    sub_file = os.path.join(oz_parts_folder, child_mapping_entry['file'])
+                    expand_child_nodes = True
+
+                process_newick(sub_file, child_full_name, result['edge_length'], child_mapping_entry, expand_child_nodes)
+
+                index = result['end']
+
+        # We've processed all the children, and we need to write the rest of the tree
+        last_chunk = tree[index:]
+
+        # Write the last chunk, but exclude the last name:edge_length, which needs special handling
+        last_closed_bracket = last_chunk.rfind(')')
+        output_stream.write(last_chunk[:last_closed_bracket+1])
+
+        # Parse the last token into the node name and edge length
+        last_token = last_chunk[last_closed_bracket+1:]
+        last_token_segments = last_token.split(':')
+        last_token_name = last_token_segments[0]
+        last_token_edge_length = last_token_segments[1] if len(last_token_segments) > 1 else None
+
+        # Always favor the lenght from our mapping, falling back to the last token in the file
+        # Note that we never fall back to edge_length_in_parent here, following old code logic
+        # DISCUSS: should we?
+        edge_length = mapping_entry['edge_length'] if mapping_entry else None
+        edge_length = edge_length or last_token_edge_length
+
+        if mapping_entry:
+            # Three levels of fallback for .PHY files: mapping, last token, parent
+            node_name = mapping_entry['taxon'] or last_token_name or node_name_in_parent
         else:
-            oz_sub_file_name = token_to_file_map[result["full_name"]][0]
-            oz_sub_file = os.path.join(oz_folder, oz_sub_file_name)
+            # Note that following old code logic, the parent vs last logic is reversed from above case
+            # DISCUSS: is there a logical reason for this?
+            node_name = node_name_in_parent or last_token_name
 
-            if os.path.exists(oz_sub_file):
-                expand_newick(oz_sub_file, sub_trees_folder, output_stream)
-            else:
-                logging.warning(f"OZ file {oz_sub_file} does not exist")
+        output_stream.write(node_name)
+        if edge_length:
+            output_stream.write(f":{edge_length}")
 
-        index = result['end']
-        
-    output_stream.write(tree[index:])
+    # Assume that the base file is in the same folder as the OneZoom parts
+    oz_parts_folder = os.path.dirname(base_file)
 
+    process_newick(base_file, expand_nodes=True)
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verbosity', '-v', action='count', default=0, help='verbosity level: output extra non-essential info')
     parser.add_argument('treefile', help='The base tree file in newick form')
-    parser.add_argument('subtreesfolder', help='The folder containing the subtree files')
+    parser.add_argument('ot_parts_folder', help='The folder containing the Open Tree parts')
     parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
     args = parser.parse_args()
 
@@ -81,5 +117,5 @@ if __name__ == "__main__":
     elif args.verbosity==2:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
-    expand_newick(args.treefile, args.subtreesfolder, args.outfile)
+    build_oz_tree(args.treefile, args.ot_parts_folder, args.outfile)
     args.outfile.write(';')
