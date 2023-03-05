@@ -1,7 +1,6 @@
-import io
 import unittest
 
-from newick_parser import parse_tree
+from one_zoom.newick_parser import parse_tree
 
 
 class TestNewickParser(unittest.TestCase):
@@ -44,6 +43,3 @@ class TestNewickParser(unittest.TestCase):
 
     def test_syntax_error_invalid_edge_length(self):
         self.verify_exception("(Blah,Foo_ott67:14z);", "'14z' is not a valid edge length")
-
-
-unittest.main()

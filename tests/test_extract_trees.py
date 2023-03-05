@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from extract_trees import extract
+from one_zoom.extract_trees import extract
 
 test_tree = "(A,(BA,((BBAA_ott123,BBAB,BBAC,BBAD)BAA,(BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B_ott789,((CAA,CAB):5.25,CB)C,D)Root;"
 
@@ -43,5 +43,3 @@ class test_extract(unittest.TestCase):
         tree = extract(test_tree, {"C", "BB"}, excluded_taxa={"BAA", "CAA"})
 
         self.assertEqual(tree, {'BB': '((BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB', 'C': '((CAB):5.25,CB)C'})
-
-unittest.main()

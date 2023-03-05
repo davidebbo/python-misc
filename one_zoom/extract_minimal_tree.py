@@ -6,7 +6,7 @@ Extract a minimal tree that includes a set of taxa
 import argparse
 import logging
 import sys
-from newick_parser import parse_tree
+from one_zoom.newick_parser import parse_tree
 from typing import Set
 
 __author__ = "David Ebbo"

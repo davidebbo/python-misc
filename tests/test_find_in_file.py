@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
-from find_in_file import get_matches
+from one_zoom.find_in_file import get_matches
 
 def chunks_from_string(s, chunk_size):
     for i in range(0, len(s), chunk_size):
@@ -81,6 +81,3 @@ class TestGetMatches(unittest.TestCase):
             self.run_get_matches("vwxyza", 0),
             [(21, 'vwxyza'), (47, 'vwxyza')]
         )
-
-
-unittest.main()
