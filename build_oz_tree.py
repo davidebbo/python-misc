@@ -28,15 +28,15 @@ def trim_tree(tree):
     
 
 def build_oz_tree(base_file, ot_parts_folder, output_stream):
-    def process_newick(part_file, node_name_in_parent=None, edge_length_in_parent=None,
+    def process_newick(file, node_name_in_parent=None, edge_length_in_parent=None,
                        mapping_entry=None, expand_nodes=False):
-        logging.debug(f'Processing {part_file}')
+        logging.debug(f'Processing {file}')
 
-        if not os.path.exists(part_file):
-            logging.warning(f"Subtree file {part_file} does not exist")
-            return
+        if not os.path.exists(file):
+            logging.warning(f"Subtree file {file} does not exist")
+            return False
 
-        with open(part_file, 'r', encoding="utf8") as stream:
+        with open(file, 'r', encoding="utf8") as stream:
             tree = stream.read()
 
         tree = trim_tree(tree)
@@ -54,6 +54,9 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
                 if 'base_ott' in result:
                     # It's an extracted Open Tree file, e.g. 123.phy
                     sub_file = os.path.join(ot_parts_folder, f'{result["base_ott"]}.phy')
+                    if not os.path.exists(sub_file):
+                        # Fall back to .nwk, which happens for additional copied files
+                        sub_file = os.path.join(ot_parts_folder, f'{result["base_ott"]}.nwk')
                     expand_child_nodes = False
                     child_mapping_entry = None
                 else:
@@ -62,9 +65,11 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
                     sub_file = os.path.join(oz_parts_folder, child_mapping_entry['file'])
                     expand_child_nodes = True
 
-                process_newick(sub_file, child_full_name, result['edge_length'], child_mapping_entry, expand_child_nodes)
-
-                index = result['end']
+                if process_newick(sub_file, child_full_name, result['edge_length'], child_mapping_entry, expand_child_nodes):
+                    index = result['end']
+                else:
+                    # If the child file doesn't exist, we'll need to write the child token as-is
+                    index = result['start']
 
         # We've processed all the children, and we need to write the rest of the tree
         last_chunk = tree[index:]
@@ -96,6 +101,8 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
         output_stream.write(node_name)
         if edge_length:
             output_stream.write(f":{edge_length}")
+
+        return True
 
     # Assume that the base file is in the same folder as the OneZoom parts
     oz_parts_folder = os.path.dirname(base_file)
