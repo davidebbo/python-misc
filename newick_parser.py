@@ -11,7 +11,7 @@ For simplicity, it assumes that the tree string has no spaces.
 
 Here is a trivial example of how to use it:
 
-    for node in parse_tree("((A_ott123,B:1.2)C_ott789:5.5;"):
+    for node in parse_tree("(A_ott123,B:1.2)C_ott789:5.5;"):
         print(f"Node: {node['taxon']}, OTT: {node['ott']}, Edge length: {node['edge_length']}")
 
 It produces the following output:

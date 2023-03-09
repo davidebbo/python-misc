@@ -11,7 +11,6 @@ from typing import Set
 
 __author__ = "David Ebbo"
 
-# Use fast method
 def extract(newick_tree, target_taxa: Set[str]):
     # We build the node list as we find them and process them
     node_list = []
@@ -90,6 +89,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick form')
     parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
-    parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxon to search for')
+    parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxa to search for')
     args = parser.parse_args()
     main(args)

@@ -3,12 +3,23 @@
 Create subtrees from the Open Tree of Life, on the basis of ott numbers in a set of newick files.
 '''
 
-'''
+'''Usage: getOpenTreesFromOneZoom.py OpenTreeFile.tre output_dir file1.PHY file2.PHY ...
+
+This script places a set of inclusion files into output_dir, based on the names of nodes in the input .PHY
+files. The input files should contain one or more node names in the OneZoom @include format
+which is the scientific name + '_ott' + (an OTT id, optionally a ~ sign, and optionally other OTT numbers separated
+by an minus sign) + '@',  e.g. Brachiopoda_ott826261@
+This specifies that the node should be replaced with part of the OpenTree: namely the subtree 
+starting at ott node 826261. 
+
 foobar_ott123@ means create a node named foobar with ott 123, consisting of all descendants of 123 in the opentree.
 foobar_ott123~456-789-111@ means create a node named foobar with ott 123, using ott456 minus the descendant subtrees 789 and 111
 The tilde sign can be read an a equals (Dendropy doesn't like equals signs in taxon names)
 foobar_ott123~-789-111@ is shorthand for foobar_ott123~123-789-111@
 foobar_ott~456-789-111@ means create a node named foobar without any OTT number, using ott456 minus the descendant subtrees 789 and 111
+
+The actual inclusion is done by the build_oz_tree.py. This script merely creates the
+files to include. It does this by extracting the relevant subtree from the full OpenTree 
 '''
 
 import argparse
@@ -16,6 +27,7 @@ import logging
 import os
 import re
 import sys
+import time
 
 import extract_trees
 
@@ -91,8 +103,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verbosity', '-v', action='count', default=0, help='verbosity level: output extra non-essential info')
     parser.add_argument('open_tree_file', help='Path to the Open Tree newick file')
-    parser.add_argument('output_dir', help='Path to the directory in which to save the OpenTree subtrees. See https://github.com/jrosindell/OneZoomTouch')
-    parser.add_argument('parse_files', nargs='+', help='A list of newick files to parse for OTT numbers, giving the subtrees to extract.')
+    parser.add_argument('output_dir', help='Path to the directory in which to save the OpenTree subtrees')
+    parser.add_argument('parse_files', nargs='+', help='A list of newick files to parse for OTT numbers, giving the subtrees to extract')
     args = parser.parse_args()
 
     if args.verbosity==0:
@@ -102,14 +114,19 @@ if __name__ == "__main__":
     elif args.verbosity==2:
         logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
 
+    start = time.time()
     if not os.path.isfile(args.open_tree_file):
         logging.warning("Could not find the OpenTree file {}".format(args.open_tree_file))
 
+    # Go through all the OneZoom files, and gather all the ott numbers to include and exclude
+    # Note that excluded ott numbers don't need to be specifically associated with an included ott number
     included_otts = set()
     excluded_otts = set()
-
     for file in args.parse_files:
         logging.info(f"== Processing One Zoom file {file}")
         get_inclusions_and_exclusions_from_one_zoom_file(file, included_otts, excluded_otts)
     
     extract_trees_from_open_tree_file(args.open_tree_file, args.output_dir, included_otts, excluded_otts)
+    
+    end = time.time()
+    logging.debug("Time taken: {} seconds".format(end - start))

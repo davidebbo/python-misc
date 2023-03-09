@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 '''
-Build the entire OneZoom tree from the saved parts
+Build the entire OneZoom tree from the saved parts.
+
+It does this in one pass, by starting with the base file (e.g. base.PHY) and
+recursively expanding any OneZoom tokens it finds.
 '''
 
 import argparse
@@ -62,7 +65,7 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
                     expand_child_nodes = False
                     child_mapping_entry = None
                 else:
-                    # Otherwise, it's a OneZoom file, e.g. Amorphea.PHY
+                    # Otherwise, it's a OneZoom file, e.g. AMORPHEA@ --> Amorphea.PHY
                     child_mapping_entry = token_to_file_map[child_full_name]
                     sub_file = os.path.join(oz_parts_folder, child_mapping_entry['file'])
                     expand_child_nodes = True
@@ -86,7 +89,7 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
         last_token_name = last_token_segments[0]
         last_token_edge_length = last_token_segments[1] if len(last_token_segments) > 1 else None
 
-        # Always favor the lenght from our mapping, falling back to the last token in the file
+        # Always favor the length from our mapping, falling back to the last token in the file
         # Note that we never fall back to edge_length_in_parent here, following old code logic
         # DISCUSS: should we?
         edge_length = mapping_entry['edge_length'] if mapping_entry else None
