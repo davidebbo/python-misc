@@ -90,7 +90,7 @@ def parse_tree(newick_tree):
 
         yield {'taxon': taxon, 'ott': ott, 'edge_length': edge_length,
                 'start': node_start_index, 'end': index, 'full_name_start_index': full_name_start_index,
-                'depth': len(index_stack)}
+                'depth': len(index_stack), 'is_leaf': not closed_brace}
 
         # If the stack is empty, we've balanced all the braces and we're done
         if len(index_stack) == 0:
@@ -105,6 +105,3 @@ def parse_tree(newick_tree):
 
     if index == len(newick_tree) or newick_tree[index] != ';':
         raise_syntax_error(f"expected a semicolon at the end of the tree")
-
-    if len(newick_tree) > index + 1:
-        raise_syntax_error(f"Unexpected output after semicolon")
