@@ -1,16 +1,15 @@
-import io
 import unittest
 
-from newick_parser import parse_tree
+from newick.newick_parser import parse_tree
 
 
 class TestNewickParser(unittest.TestCase):
     def test_full_parse_result(self):
         node_list = list(parse_tree("(A_ott123,B:1.2)C_ott789:5.5;"))
         self.assertEqual(node_list, [
-            {'taxon': 'A', 'ott': '123', 'edge_length': 0.0, 'start': 1, 'end': 9, 'full_name_start_index': 1, 'depth': 1},
-            {'taxon': 'B', 'ott': None, 'edge_length': 1.2, 'start': 10, 'end': 15, 'full_name_start_index': 10, 'depth': 1},
-            {'taxon': 'C', 'ott': '789', 'edge_length': 5.5, 'start': 0, 'end': 28, 'full_name_start_index': 16, 'depth': 0}])
+            {'taxon': 'A', 'ott': '123', 'edge_length': 0.0, 'start': 1, 'end': 9, 'full_name_start_index': 1, 'depth': 1, 'is_leaf': True},
+            {'taxon': 'B', 'ott': None, 'edge_length': 1.2, 'start': 10, 'end': 15, 'full_name_start_index': 10, 'depth': 1, 'is_leaf': True},
+            {'taxon': 'C', 'ott': '789', 'edge_length': 5.5, 'start': 0, 'end': 28, 'full_name_start_index': 16, 'depth': 0, 'is_leaf': False}])
 
     def test_quoted_taxa(self):
         node_list = list(parse_tree("('Abc/def_ott123','qw e$r&ty':1.2)'C_*(ot)t789_ott987':5.5;"))
@@ -44,6 +43,3 @@ class TestNewickParser(unittest.TestCase):
 
     def test_syntax_error_invalid_edge_length(self):
         self.verify_exception("(Blah,Foo_ott67:14z);", "'14z' is not a valid edge length")
-
-
-unittest.main()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 '''
 Lightweight Newick parser that takes a string and enumerate all the nodes in the tree.
 

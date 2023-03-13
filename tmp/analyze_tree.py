@@ -1,7 +1,9 @@
 import argparse
 import sys
-from newick_parser import parse_tree
 
+from newick.newick_parser import parse_tree
+
+__author__ = "David Ebbo"
 
 def analyze_tree(tree):
     node_count = 0
