@@ -2,10 +2,12 @@
 Extract a minimal tree that includes a set of taxa
 '''
 
+import argparse
 import logging
+import sys
 from typing import Set
 
-from newick.newick_parser import parse_tree
+from oz_tree_build.newick.newick_parser import parse_tree
 
 __author__ = "David Ebbo"
 
@@ -69,3 +71,21 @@ def extract_minimal_tree(newick_tree, target_taxa: Set[str]):
     # Return the tree, if any
     assert len(node_list) <= 1
     return node_list[0]['tree_string'] if len(node_list) > 0 else None
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick form')
+    parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
+    parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxa to search for')
+    args = parser.parse_args()
+
+    target_taxa = set(args.taxa)
+
+    # Read the whole file as a string. This is not ideal, but it's still
+    # very fast even with the full OpenTree tree.
+    # This could be optimized to read by chunks, with more complexity
+    tree = args.treefile.read()
+
+    result = extract_minimal_tree(tree, target_taxa)
+    if result:
+        args.outfile.write(result + ';\n')

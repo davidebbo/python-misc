@@ -4,7 +4,9 @@ The challenge is that the regex engine can't see the entire file at once, so we 
 chunks and stitch the chunks together before passing them to the regex engine.
 '''
 
+import argparse
 import re
+import sys
 
 __author__ = "David Ebbo"
 
@@ -53,3 +55,14 @@ def get_matches(chunk_iterator, regex, window_size):
         pre_string = chunk[-window_size:]
 
         chunk = next_chunk
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('regex', help='The expression to search for')
+    parser.add_argument('file', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The input file')
+    parser.add_argument('--window_size', '-w', type=int, default=100, help='the number of characters to display before and after each match')
+    parser.add_argument('--chunk_size', '-c', type=int, default=10000, help='the size of the chunks to read from the file')
+    args = parser.parse_args()
+
+    for index, match in get_matches(chunks_from_file(args.file, args.chunk_size), args.regex, args.window_size):
+        print(f"{index}: {match}")

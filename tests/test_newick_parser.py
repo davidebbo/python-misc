@@ -1,4 +1,4 @@
-from newick.newick_parser import parse_tree
+from oz_tree_build.newick.newick_parser import parse_tree
 
 
 def test_full_parse_result():

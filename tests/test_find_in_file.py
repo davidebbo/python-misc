@@ -2,7 +2,7 @@
 Unit test for find_in_file
 '''
 
-from utilities.find_in_file import get_matches
+from oz_tree_build.utilities.find_in_file import get_matches
 
 def chunks_from_string(s, chunk_size):
     for i in range(0, len(s), chunk_size):

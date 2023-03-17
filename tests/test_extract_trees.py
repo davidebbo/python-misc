@@ -2,7 +2,7 @@
 Unit tests for extract_trees
 '''
 
-from newick.extract_trees_impl import extract_trees
+from oz_tree_build.newick.extract_trees import extract_trees
 
 test_tree = "(A,(BA,((BBAA_ott123,BBAB,BBAC,BBAD)BAA,(BBBA)BBB,(BBCA:12.34,BBCB)BBC_ott456:78.9)BB)B_ott789,((CAA,CAB):5.25,CB)C,D)Root;"
 

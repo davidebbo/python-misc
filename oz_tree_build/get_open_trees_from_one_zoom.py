@@ -28,8 +28,8 @@ import os
 import sys
 import time
 
-import extract_trees
-from newick.helpers import enumerate_one_zoom_tokens
+from oz_tree_build.oz_tokens import enumerate_one_zoom_tokens
+from oz_tree_build.newick.extract_trees import extract_trees
 
 __author__ = "David Ebbo"
 
@@ -54,7 +54,7 @@ def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_o
     with open(open_tree_file, 'r', encoding="utf8") as f:
         fulltree = f.read()
 
-    trees = extract_trees.extract_trees(fulltree, all_included_otts, excluded_taxa=all_excluded_otts)
+    trees = extract_trees(fulltree, all_included_otts, excluded_taxa=all_excluded_otts)
 
     logging.info(f"Extracted {len(trees)} trees from Open Tree file")
 
@@ -67,7 +67,7 @@ def extract_trees_from_open_tree_file(open_tree_file, output_dir, all_included_o
             f.write(";\n")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verbosity', '-v', action='count', default=0, help='verbosity level: output extra non-essential info')
     parser.add_argument('open_tree_file', help='Path to the Open Tree newick file')

@@ -11,11 +11,25 @@ import logging
 import os
 import sys
 
-from newick.helpers import enumerate_one_zoom_tokens, trim_tree
-from newick.token_to_oz_tree_file_mapping import token_to_file_map
+from oz_tree_build.oz_tokens import enumerate_one_zoom_tokens
+from oz_tree_build.token_to_oz_tree_file_mapping import token_to_file_map
 
 __author__ = "David Ebbo"
 
+def trim_tree(tree):
+    # Skip the comment block at the start of the file, if any
+    if '[' in tree:
+        tree = tree[tree.index(']')+1:]
+
+    # Trim any whitespace
+    tree = tree.strip()
+
+    # Strip the trailing semicolon
+    if tree[-1] == ';':
+        tree = tree[:-1]
+
+    return tree
+    
 '''
 Copy the input file to the output file, recursively expanding any OneZoom tokens
 '''
@@ -101,7 +115,7 @@ def build_oz_tree(base_file, ot_parts_folder, output_stream):
 
     process_newick(base_file, expand_nodes=True)
     
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--verbosity', '-v', action='count', default=0, help='verbosity level: output extra non-essential info')
     parser.add_argument('treefile', help='The base tree file in newick form')

@@ -11,10 +11,12 @@ python3 extract_trees.py tree.tre -t Tupaia Camelidae
 '''
 
 
+import argparse
 import logging
+import sys
 from typing import Set
 
-from newick.newick_parser import parse_tree
+from oz_tree_build.newick.newick_parser import parse_tree
 
 __author__ = "David Ebbo"
 
@@ -83,3 +85,28 @@ def extract_trees(newick_tree, target_taxa: Set[str], excluded_taxa: Set[str] = 
     # Return a dictionary of subtrees, indexed by ott or name
     return {subtree['ott'] or subtree['name']: subtree['tree_string'] for subtree in subtrees}
 
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick form')
+    parser.add_argument('outfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
+    parser.add_argument('--taxa', '-t', nargs='+', required=True, help='the taxon to search for')
+    parser.add_argument('--excluded_taxa', '-x', nargs='+', help='taxa to exclude from the result')
+    args = parser.parse_args()
+
+    target_taxa = set(args.taxa)
+    excluded_taxa = set(args.excluded_taxa) if args.excluded_taxa else set()
+
+    # Read the whole file as a string. This is not ideal, but it's still very fast
+    # even with the full OpenTree tree, and the memory usage is acceptable.
+    # This could be optimized to read by chunks, with much more complexity.
+    tree = args.treefile.read()
+
+    result = extract_trees(tree, target_taxa, excluded_taxa)
+
+    if len(result) == 1:
+        # If only one result, just output the tree
+        args.outfile.write(f'{next(iter(result.values()))};\n')
+    else:
+        # If multiple items, output each on a separate line, prefixed with the name/ott
+        for name, tree in result.items():
+            args.outfile.write(f'{name}: {tree};\n')

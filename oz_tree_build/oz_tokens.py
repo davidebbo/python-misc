@@ -3,21 +3,6 @@ __author__ = "David Ebbo"
 import logging
 import re
 
-
-def trim_tree(tree):
-    # Skip the comment block at the start of the file, if any
-    if '[' in tree:
-        tree = tree[tree.index(']')+1:]
-
-    # Trim any whitespace
-    tree = tree.strip()
-
-    # Strip the trailing semicolon
-    if tree[-1] == ';':
-        tree = tree[:-1]
-
-    return tree
-    
 '''
 Enumerates all the OneZoom tokens in a tree string (e.g. foobar_ott123~-789-111)
 '''

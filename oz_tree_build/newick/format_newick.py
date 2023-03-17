@@ -64,13 +64,10 @@ def format(newick_tree, output_stream, indent_spaces=2):
             output_stream.write(newick_tree[index] + '\n')
             break
 
-def main(args):
-    format(args.treefile.read(), args.outputfile, args.indent_spaces)
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('treefile', type=argparse.FileType('r'), nargs='?', default=sys.stdin, help='The tree file in newick format')
     parser.add_argument('outputfile', type=argparse.FileType('w'), nargs='?', default=sys.stdout, help='The output tree file')
     parser.add_argument('--indent_spaces', '-i', default=2, type=int, help='the number of spaces for each indentation level')
     args = parser.parse_args()
-    main(args)
+    format(args.treefile.read(), args.outputfile, args.indent_spaces)
