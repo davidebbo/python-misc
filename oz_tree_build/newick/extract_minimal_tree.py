@@ -89,3 +89,6 @@ def main():
     result = extract_minimal_tree(tree, target_taxa)
     if result:
         args.outfile.write(result + ';\n')
+
+if __name__ == '__main__':
+    main()

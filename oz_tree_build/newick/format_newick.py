@@ -71,3 +71,6 @@ def main():
     parser.add_argument('--indent_spaces', '-i', default=2, type=int, help='the number of spaces for each indentation level')
     args = parser.parse_args()
     format(args.treefile.read(), args.outputfile, args.indent_spaces)
+
+if __name__ == '__main__':
+    main()

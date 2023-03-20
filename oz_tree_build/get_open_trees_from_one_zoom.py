@@ -98,3 +98,6 @@ def main():
     
     end = time.time()
     logging.debug("Time taken: {} seconds".format(end - start))
+
+if __name__ == '__main__':
+    main()

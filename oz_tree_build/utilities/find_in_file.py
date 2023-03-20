@@ -66,3 +66,6 @@ def main():
 
     for index, match in get_matches(chunks_from_file(args.file, args.chunk_size), args.regex, args.window_size):
         print(f"{index}: {match}")
+
+if __name__ == '__main__':
+    main()

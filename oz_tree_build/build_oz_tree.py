@@ -132,3 +132,6 @@ def main():
 
     build_oz_tree(args.treefile, args.ot_parts_folder, args.outfile)
     args.outfile.write(';')
+
+if __name__ == '__main__':
+    main()

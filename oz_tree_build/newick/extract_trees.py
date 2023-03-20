@@ -110,3 +110,6 @@ def main():
         # If multiple items, output each on a separate line, prefixed with the name/ott
         for name, tree in result.items():
             args.outfile.write(f'{name}: {tree};\n')
+
+if __name__ == '__main__':
+    main()
